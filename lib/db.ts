@@ -2,14 +2,11 @@ import { Pool } from 'pg';
 
 // Create a connection pool
 const pool = new Pool({
-  host: process.env.PGHOST || 'localhost',
-  port: parseInt(process.env.PGPORT || '5432'),
-  user: process.env.PGUSER || 'postgres',
-  password: process.env.PGPASSWORD,
-  database: process.env.PGDATABASE || 'pafm_db',
-  max: 20, // Maximum number of connections in the pool
+  connectionString: process.env.POSTGRES_URL || process.env.DATABASE_URL,
+  ssl: process.env.POSTGRES_URL ? { rejectUnauthorized: false } : false,
+  max: 20,
   idleTimeoutMillis: 30000,
-  connectionTimeoutMillis: 2000,
+  connectionTimeoutMillis: 10000,
 });
 
 // Handle pool errors
