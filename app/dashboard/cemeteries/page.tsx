@@ -2,6 +2,9 @@ import Navbar from '@/components/Navbar';
 import Link from 'next/link';
 import { query } from '@/lib/db';
 
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 interface Cemetery {
   id: number;
   name: string;
