@@ -33,7 +33,7 @@ export async function GET(request: NextRequest) {
          FROM burials b
          JOIN deceased_persons d ON b.deceased_id = d.id
          WHERE b.plot_id = $1
-         ORDER BY b.layer ASC`,
+         ORDER BY b.burial_date DESC`,
         [plotId]
       );
     } else {
@@ -44,7 +44,7 @@ export async function GET(request: NextRequest) {
          JOIN deceased_persons d ON b.deceased_id = d.id
          JOIN grave_plots gp ON b.plot_id = gp.id
          WHERE gp.cemetery_id = $1
-         ORDER BY b.plot_id, b.layer ASC`,
+         ORDER BY b.plot_id, b.burial_date DESC`,
         [cemeteryId]
       );
     }
