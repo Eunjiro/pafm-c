@@ -31,7 +31,7 @@ export async function POST(request: NextRequest) {
     console.log('📍 End coords (lng,lat):', endCoords);
     console.log('🚶 Profile:', profile);
 
-    const response = await fetch(`${ORS_BASE_URL}/v2/directions/${profile}/geojson`, {
+    const response = await fetch(`${ORS_BASE_URL}/v2/directions/${profile}/geojson?api_key=${ORS_API_KEY}`, {
       method: 'POST',
       headers: {
         'Accept': 'application/json, application/geo+json, application/gpx+xml, img/png; charset=utf-8',
@@ -41,7 +41,6 @@ export async function POST(request: NextRequest) {
         coordinates: [startCoords, endCoords],
         instructions: true,
         language: 'en',
-        api_key: ORS_API_KEY,
       }),
     });
 
