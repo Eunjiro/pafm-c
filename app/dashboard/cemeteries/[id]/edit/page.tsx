@@ -3,6 +3,16 @@
 import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Navbar from '@/components/Navbar';
+import dynamic from 'next/dynamic';
+
+const CemeteryMap = dynamic(() => import('@/components/CemeteryMap'), {
+  ssr: false,
+  loading: () => (
+    <div className="h-[600px] w-full rounded-lg overflow-hidden border border-gray-300 flex items-center justify-center bg-gray-50">
+      <p className="text-gray-500">Loading map...</p>
+    </div>
+  ),
+});
 
 interface CemeteryFormData {
   name: string;
@@ -40,6 +50,7 @@ export default function EditCemeteryPage() {
     established_year: '',
     is_active: true,
   });
+  const [boundaryCoordinates, setBoundaryCoordinates] = useState<[number, number][]>([]);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   useEffect(() => {
@@ -66,6 +77,9 @@ export default function EditCemeteryPage() {
           established_year: cemetery.established_year?.toString() || '',
           is_active: cemetery.is_active ?? true,
         });
+        if (cemetery.map_coordinates) {
+          setBoundaryCoordinates(cemetery.map_coordinates);
+        }
       } else {
         alert('Failed to load cemetery');
         router.push('/dashboard/cemeteries');
@@ -98,6 +112,7 @@ export default function EditCemeteryPage() {
         longitude: formData.longitude ? parseFloat(formData.longitude) : undefined,
         established_year: formData.established_year ? parseInt(formData.established_year) : undefined,
         is_active: formData.is_active,
+        map_coordinates: boundaryCoordinates.length > 0 ? boundaryCoordinates : undefined,
       };
 
       const response = await fetch(`/api/cemeteries/${cemeteryId}`, {
@@ -132,7 +147,7 @@ export default function EditCemeteryPage() {
     return (
       <div className="min-h-screen bg-gray-50">
         <Navbar />
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <div className="text-center py-12">Loading...</div>
         </div>
       </div>
@@ -143,12 +158,16 @@ export default function EditCemeteryPage() {
     <div className="min-h-screen bg-gray-50">
       <Navbar />
       
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-gray-900">Edit Cemetery</h1>
+          <p className="mt-2 text-gray-600">Update cemetery information and adjust boundaries</p>
         </div>
 
-        <form onSubmit={handleSubmit} className="bg-white shadow-md rounded-lg p-6 space-y-6">
+        <form onSubmit={handleSubmit} className="space-y-8">
+          {/* Basic Information */}
+          <div className="bg-white rounded-lg shadow p-6 space-y-6">
+            <h2 className="text-xl font-semibold text-gray-900 mb-4">Basic Information</h2>
           {/* Name */}
           <div>
             <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">
@@ -328,6 +347,34 @@ export default function EditCemeteryPage() {
             <label htmlFor="is_active" className="ml-2 block text-sm text-gray-700">
               Active
             </label>
+          </div>
+          </div>
+
+          {/* Cemetery Boundary Map */}
+          <div className="bg-white rounded-lg shadow p-6">
+            <h2 className="text-xl font-semibold text-gray-900 mb-4">Cemetery Boundary</h2>
+            <p className="text-sm text-gray-600 mb-4">
+              Draw or adjust the cemetery boundary on the map. Click on the map to add points, and close the polygon to complete the boundary.
+            </p>
+            
+            <CemeteryMap
+              center={
+                formData.latitude && formData.longitude
+                  ? [parseFloat(formData.latitude), parseFloat(formData.longitude)]
+                  : [14.5995, 120.9842]
+              }
+              onBoundaryChange={setBoundaryCoordinates}
+              existingBoundary={boundaryCoordinates}
+            />
+
+            {boundaryCoordinates.length > 0 && (
+              <p className="text-sm text-green-600 mt-3 flex items-center">
+                <svg className="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                </svg>
+                ✓ Boundary outlined with {boundaryCoordinates.length} points
+              </p>
+            )}
           </div>
 
           {/* Buttons */}

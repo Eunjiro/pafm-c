@@ -6,16 +6,16 @@ import Navbar from '@/components/Navbar';
 interface DashboardStats {
   totalCemeteries: number;
   totalPlots: number;
-  occupiedPlots: number;
-  availablePlots: number;
+  totalCapacity: number;
+  availableCapacity: number;
 }
 
 export default function DashboardPage() {
   const [stats, setStats] = useState<DashboardStats>({
     totalCemeteries: 0,
     totalPlots: 0,
-    occupiedPlots: 0,
-    availablePlots: 0,
+    totalCapacity: 0,
+    availableCapacity: 0,
   });
   const [loading, setLoading] = useState(true);
 
@@ -27,36 +27,50 @@ export default function DashboardPage() {
         const cemeteriesData = await cemeteriesRes.json();
         const totalCemeteries = cemeteriesData.cemeteries?.length || 0;
 
-        // Fetch all plots (we need to count them across all cemeteries)
+        // Fetch all plots and burials to calculate capacity
         let totalPlots = 0;
-        let occupiedCount = 0;
-        let availableCount = 0;
+        let totalCapacity = 0;
+        let occupiedCapacity = 0;
 
         if (totalCemeteries > 0) {
-          // Get first cemetery to fetch plots
-          const plotsRes = await fetch(`/api/plots?cemetery_id=${cemeteriesData.cemeteries[0].id}`);
-          
-          // Actually, we need to count all plots across all cemeteries
-          // Let's fetch plots for each cemetery
+          // Fetch plots for each cemetery
           const plotPromises = cemeteriesData.cemeteries.map((cemetery: any) =>
             fetch(`/api/plots?cemetery_id=${cemetery.id}`).then(r => r.json())
           );
           
           const allPlotsData = await Promise.all(plotPromises);
           
+          // Fetch burials for each cemetery to count occupied layers
+          const burialPromises = cemeteriesData.cemeteries.map((cemetery: any) =>
+            fetch(`/api/burials?cemetery_id=${cemetery.id}`).then(r => r.json())
+          );
+          
+          const allBurialsData = await Promise.all(burialPromises);
+          
           allPlotsData.forEach((data) => {
             const plots = data.plots || [];
             totalPlots += plots.length;
-            occupiedCount += plots.filter((p: any) => p.status === 'occupied').length;
-            availableCount += plots.filter((p: any) => p.status === 'available').length;
+            
+            // Calculate total capacity (sum of all layers)
+            plots.forEach((plot: any) => {
+              totalCapacity += plot.layers || 1;
+            });
+          });
+          
+          // Count occupied layers from burials
+          allBurialsData.forEach((data) => {
+            const burials = data.burials || [];
+            occupiedCapacity += burials.length;
           });
         }
+
+        const availableCapacity = totalCapacity - occupiedCapacity;
 
         setStats({
           totalCemeteries,
           totalPlots,
-          occupiedPlots: occupiedCount,
-          availablePlots: availableCount,
+          totalCapacity,
+          availableCapacity,
         });
       } catch (error) {
         console.error('Error fetching dashboard stats:', error);
@@ -114,9 +128,9 @@ export default function DashboardPage() {
           <div className="bg-white rounded-lg shadow p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-600">Occupied Plots</p>
+                <p className="text-sm font-medium text-gray-600">Total Capacity</p>
                 <p className="text-3xl font-bold text-gray-900">
-                  {loading ? '...' : stats.occupiedPlots}
+                  {loading ? '...' : stats.totalCapacity}
                 </p>
               </div>
               <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center">
@@ -130,9 +144,9 @@ export default function DashboardPage() {
           <div className="bg-white rounded-lg shadow p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-600">Available Plots</p>
+                <p className="text-sm font-medium text-gray-600">Available Capacity</p>
                 <p className="text-3xl font-bold text-gray-900">
-                  {loading ? '...' : stats.availablePlots}
+                  {loading ? '...' : stats.availableCapacity}
                 </p>
               </div>
               <div className="w-12 h-12 bg-yellow-100 rounded-lg flex items-center justify-center">

@@ -292,10 +292,10 @@ export default function NewCemeteryPage() {
           <div className="flex justify-end gap-4">
             <button
               type="button"
-              onClick={() => router.back()}
+              onClick={() => router.push('/dashboard/cemeteries')}
               className="px-6 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors"
             >
-              Cancel
+              Back
             </button>
             <button
               type="submit"
