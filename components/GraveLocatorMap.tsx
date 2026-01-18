@@ -18,18 +18,51 @@ function MapController({
   highlightedPlotId, 
   plots, 
   onMapReady,
-  userLocation 
+  userLocation,
+  centerToUser,
+  centerToLocation 
 }: { 
   highlightedPlotId: number | null; 
   plots: Plot[];
   onMapReady: (map: L.Map) => void;
   userLocation: [number, number] | null;
+  centerToUser: () => void;
+  centerToLocation: () => void;
 }) {
   const map = useMap();
 
   useEffect(() => {
     onMapReady(map);
   }, [map, onMapReady]);
+
+  // Handle centering to user location
+  const handleCenterToUser = () => {
+    if (userLocation && map) {
+      map.flyTo(userLocation, 19, {
+        duration: 1
+      });
+    }
+  };
+
+  // Handle centering to highlighted plot
+  const handleCenterToLocation = () => {
+    if (!highlightedPlotId || !map) return;
+
+    const highlightedPlot = plots.find(p => p.id === highlightedPlotId);
+    if (!highlightedPlot) return;
+
+    const coords = highlightedPlot.map_coordinates;
+    if (!coords || !Array.isArray(coords) || coords.length === 0) return;
+
+    const latSum = coords.reduce((sum: number, coord: [number, number]) => sum + coord[0], 0);
+    const lngSum = coords.reduce((sum: number, coord: [number, number]) => sum + coord[1], 0);
+    const centerLat = latSum / coords.length;
+    const centerLng = lngSum / coords.length;
+
+    map.flyTo([centerLat, centerLng], 21, {
+      duration: 1
+    });
+  };
 
   // Handle plot highlighting
   useEffect(() => {
@@ -232,6 +265,21 @@ export default function GraveLocatorMap({
           plots={plots}
           onMapReady={setMap}
           userLocation={userLocation}
+          centerToUser={() => {
+            if (userLocation && map) {
+              map.flyTo(userLocation, 19, { duration: 1 });
+            }
+          }}
+          centerToLocation={() => {
+            if (!highlightedPlotId || !map) return;
+            const plot = plots.find(p => p.id === highlightedPlotId);
+            if (!plot) return;
+            const coords = plot.map_coordinates;
+            if (!coords || !Array.isArray(coords) || coords.length === 0) return;
+            const latSum = coords.reduce((sum: number, coord: [number, number]) => sum + coord[0], 0);
+            const lngSum = coords.reduce((sum: number, coord: [number, number]) => sum + coord[1], 0);
+            map.flyTo([latSum / coords.length, lngSum / coords.length], 21, { duration: 1 });
+          }}
         />
         
         <TileLayer
@@ -260,6 +308,49 @@ export default function GraveLocatorMap({
         )}
       </MapContainer>
       )}
+
+      {/* Floating Map Controls */}
+      <div className="absolute top-2 right-2 z-[1000] flex flex-col gap-2">
+        {/* Center to User Location Button */}
+        {userLocation && (
+          <button
+            onClick={() => {
+              if (map && userLocation) {
+                map.flyTo(userLocation, 19, { duration: 1 });
+              }
+            }}
+            className="bg-white hover:bg-gray-100 text-gray-700 p-2 rounded-lg shadow-lg transition-colors"
+            title="Center to my location"
+          >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+            </svg>
+          </button>
+        )}
+
+        {/* Center to Selected Plot Button */}
+        {highlightedPlotId && (
+          <button
+            onClick={() => {
+              if (!map || !highlightedPlotId) return;
+              const plot = plots.find(p => p.id === highlightedPlotId);
+              if (!plot) return;
+              const coords = plot.map_coordinates;
+              if (!coords || !Array.isArray(coords) || coords.length === 0) return;
+              const latSum = coords.reduce((sum: number, coord: [number, number]) => sum + coord[0], 0);
+              const lngSum = coords.reduce((sum: number, coord: [number, number]) => sum + coord[1], 0);
+              map.flyTo([latSum / coords.length, lngSum / coords.length], 21, { duration: 1 });
+            }}
+            className="bg-white hover:bg-gray-100 text-gray-700 p-2 rounded-lg shadow-lg transition-colors"
+            title="Center to grave location"
+          >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
+            </svg>
+          </button>
+        )}
+      </div>
 
       {/* Legend - Only show when a plot is highlighted */}
       {highlightedPlotId && (
