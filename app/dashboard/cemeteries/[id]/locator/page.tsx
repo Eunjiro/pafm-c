@@ -504,8 +504,33 @@ export default function GraveLocatorPage() {
                 onClick={() => {
                   const plot = plots.find(p => p.id === selectedResult.plot_id);
                   
-                  if (plot && plot.latitude && plot.longitude) {
-                    handleGetDirections([plot.latitude, plot.longitude]);
+                  if (!plot) {
+                    alert('Plot not found.');
+                    return;
+                  }
+
+                  let targetCoords: [number, number] | null = null;
+
+                  // First try latitude/longitude
+                  if (plot.latitude && plot.longitude) {
+                    targetCoords = [plot.latitude, plot.longitude];
+                  } 
+                  // Then try to extract from map_coordinates
+                  else if (plot.map_coordinates) {
+                    if (Array.isArray(plot.map_coordinates) && plot.map_coordinates.length > 0) {
+                      // If it's an array of coordinates, use the first one (or center)
+                      const coords = plot.map_coordinates[0];
+                      if (Array.isArray(coords) && coords.length === 2) {
+                        targetCoords = [coords[0], coords[1]];
+                      }
+                    } else if (typeof plot.map_coordinates === 'object' && 'x' in plot.map_coordinates && 'y' in plot.map_coordinates) {
+                      // If it's {x, y} format, assume these are lat/lng
+                      targetCoords = [plot.map_coordinates.x, plot.map_coordinates.y];
+                    }
+                  }
+
+                  if (targetCoords) {
+                    handleGetDirections(targetCoords);
                   } else {
                     alert('This plot does not have coordinates set. Please edit the plot in the map editor to add coordinates.');
                   }
