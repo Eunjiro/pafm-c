@@ -21,6 +21,7 @@ const plotSchema = z.object({
   ]).optional(),
   price: z.number().positive().optional(),
   notes: z.string().optional(),
+  layers: z.number().int().positive().default(1),
 });
 
 // GET all plots for a cemetery

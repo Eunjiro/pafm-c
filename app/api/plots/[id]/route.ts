@@ -21,6 +21,7 @@ const plotSchema = z.object({
   ]).optional(),
   price: z.number().positive().optional(),
   notes: z.string().optional(),
+  layers: z.number().int().positive().optional(),
 });
 
 // GET single plot
@@ -74,8 +75,8 @@ export async function PUT(
       `UPDATE grave_plots SET
         plot_number = $1, plot_type = $2, status = $3,
         size_length = $4, size_width = $5, latitude = $6, longitude = $7,
-        map_coordinates = $8, price = $9, notes = $10, updated_at = CURRENT_TIMESTAMP
-      WHERE id = $11
+        map_coordinates = $8, price = $9, notes = $10, layers = $11, updated_at = CURRENT_TIMESTAMP
+      WHERE id = $12
       RETURNING *`,
       [
         validatedData.plot_number,
@@ -88,6 +89,7 @@ export async function PUT(
         validatedData.map_coordinates ? JSON.stringify(validatedData.map_coordinates) : null,
         validatedData.price,
         validatedData.notes,
+        validatedData.layers,
         id,
       ]
     );
