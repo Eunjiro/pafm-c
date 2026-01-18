@@ -63,6 +63,33 @@ export default function GraveLocatorPage() {
     return () => clearTimeout(timer);
   }, [cemeteryId]);
 
+  // Watch for navigation mode changes and recalculate route if one exists
+  useEffect(() => {
+    if (showDirections && selectedResult && userLocation) {
+      const plot = plots.find(p => p.id === selectedResult.plot_id);
+      if (plot) {
+        let targetCoords: [number, number] | null = null;
+
+        if (plot.latitude && plot.longitude) {
+          targetCoords = [plot.latitude, plot.longitude];
+        } else if (plot.map_coordinates) {
+          if (Array.isArray(plot.map_coordinates) && plot.map_coordinates.length > 0) {
+            const coords = plot.map_coordinates[0];
+            if (Array.isArray(coords) && coords.length === 2) {
+              targetCoords = [coords[0], coords[1]];
+            }
+          } else if (typeof plot.map_coordinates === 'object' && 'x' in plot.map_coordinates && 'y' in plot.map_coordinates) {
+            targetCoords = [plot.map_coordinates.x, plot.map_coordinates.y];
+          }
+        }
+
+        if (targetCoords) {
+          handleGetDirections(targetCoords);
+        }
+      }
+    }
+  }, [navigationMode]);
+
   // Auto-search as user types with debouncing
   useEffect(() => {
     if (searchTimeout) {
@@ -102,7 +129,8 @@ export default function GraveLocatorPage() {
       return;
     }
 
-    navigator.geolocation.getCurrentPosition(
+    // Use watchPosition for real-time GPS tracking
+    const watchId = navigator.geolocation.watchPosition(
       (position) => {
         setUserLocation([position.coords.latitude, position.coords.longitude]);
         setLocationError(null);
@@ -134,7 +162,12 @@ export default function GraveLocatorPage() {
         maximumAge: 0
       }
     );
-  };
+    // Return cleanup function to stop watching position
+    return () => {
+      if (watchId) {
+        navigator.geolocation.clearWatch(watchId);
+      }
+    };  };
 
   const fetchCemeteryData = async () => {
     try {
