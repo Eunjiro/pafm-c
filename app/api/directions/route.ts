@@ -34,14 +34,14 @@ export async function POST(request: NextRequest) {
     const response = await fetch(`${ORS_BASE_URL}/v2/directions/${profile}/geojson`, {
       method: 'POST',
       headers: {
-        'Accept': 'application/json, application/geo+json',
+        'Accept': 'application/json, application/geo+json, application/gpx+xml, img/png; charset=utf-8',
         'Content-Type': 'application/json; charset=utf-8',
-        'Authorization': ORS_API_KEY,
       },
       body: JSON.stringify({
         coordinates: [startCoords, endCoords],
         instructions: true,
         language: 'en',
+        api_key: ORS_API_KEY,
       }),
     });
 
