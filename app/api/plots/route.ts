@@ -19,7 +19,6 @@ const plotSchema = z.object({
     }),
     z.array(z.tuple([z.number(), z.number()])),
   ]).optional(),
-  layers: z.number().int().positive().default(1),
   price: z.number().positive().optional(),
   notes: z.string().optional(),
 });
@@ -71,8 +70,8 @@ export async function POST(request: NextRequest) {
     const result = await query(
       `INSERT INTO grave_plots (
         cemetery_id, section_id, plot_number, plot_type, status,
-        size_length, size_width, latitude, longitude, map_coordinates, layers, price, notes
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
+        size_length, size_width, latitude, longitude, map_coordinates, price, notes
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
       RETURNING *`,
       [
         validatedData.cemetery_id,
@@ -85,7 +84,6 @@ export async function POST(request: NextRequest) {
         validatedData.latitude,
         validatedData.longitude,
         validatedData.map_coordinates ? JSON.stringify(validatedData.map_coordinates) : null,
-        validatedData.layers,
         validatedData.price,
         validatedData.notes,
       ]
