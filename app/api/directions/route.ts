@@ -27,11 +27,16 @@ export async function POST(request: NextRequest) {
     const endCoords: [number, number] = [end[1], end[0]];
 
     console.log('🔑 API Key:', ORS_API_KEY ? 'Present' : 'Missing');
+    console.log('� API Key length:', ORS_API_KEY ? ORS_API_KEY.length : 0);
+    console.log('🔑 API Key first 10 chars:', ORS_API_KEY ? ORS_API_KEY.substring(0, 10) + '...' : 'N/A');
     console.log('📍 Start coords (lng,lat):', startCoords);
     console.log('📍 End coords (lng,lat):', endCoords);
     console.log('🚶 Profile:', profile);
 
-    const response = await fetch(`${ORS_BASE_URL}/v2/directions/${profile}/geojson?api_key=${ORS_API_KEY}`, {
+    const url = `${ORS_BASE_URL}/v2/directions/${profile}/geojson?api_key=${ORS_API_KEY}`;
+    console.log('🌐 Request URL:', url.replace(ORS_API_KEY, 'API_KEY_HIDDEN'));
+
+    const response = await fetch(url, {
       method: 'POST',
       headers: {
         'Accept': 'application/json, application/geo+json, application/gpx+xml, img/png; charset=utf-8',
