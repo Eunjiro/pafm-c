@@ -1,6 +1,73 @@
+'use client';
+
+import { useEffect, useState } from 'react';
 import Navbar from '@/components/Navbar';
 
+interface DashboardStats {
+  totalCemeteries: number;
+  totalPlots: number;
+  occupiedPlots: number;
+  availablePlots: number;
+}
+
 export default function DashboardPage() {
+  const [stats, setStats] = useState<DashboardStats>({
+    totalCemeteries: 0,
+    totalPlots: 0,
+    occupiedPlots: 0,
+    availablePlots: 0,
+  });
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function fetchStats() {
+      try {
+        // Fetch cemeteries count
+        const cemeteriesRes = await fetch('/api/cemeteries');
+        const cemeteriesData = await cemeteriesRes.json();
+        const totalCemeteries = cemeteriesData.cemeteries?.length || 0;
+
+        // Fetch all plots (we need to count them across all cemeteries)
+        let totalPlots = 0;
+        let occupiedCount = 0;
+        let availableCount = 0;
+
+        if (totalCemeteries > 0) {
+          // Get first cemetery to fetch plots
+          const plotsRes = await fetch(`/api/plots?cemetery_id=${cemeteriesData.cemeteries[0].id}`);
+          
+          // Actually, we need to count all plots across all cemeteries
+          // Let's fetch plots for each cemetery
+          const plotPromises = cemeteriesData.cemeteries.map((cemetery: any) =>
+            fetch(`/api/plots?cemetery_id=${cemetery.id}`).then(r => r.json())
+          );
+          
+          const allPlotsData = await Promise.all(plotPromises);
+          
+          allPlotsData.forEach((data) => {
+            const plots = data.plots || [];
+            totalPlots += plots.length;
+            occupiedCount += plots.filter((p: any) => p.status === 'occupied').length;
+            availableCount += plots.filter((p: any) => p.status === 'available').length;
+          });
+        }
+
+        setStats({
+          totalCemeteries,
+          totalPlots,
+          occupiedPlots: occupiedCount,
+          availablePlots: availableCount,
+        });
+      } catch (error) {
+        console.error('Error fetching dashboard stats:', error);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    fetchStats();
+  }, []);
+
   return (
     <div className="min-h-screen bg-gray-50">
       <Navbar />
@@ -16,7 +83,9 @@ export default function DashboardPage() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-gray-600">Total Cemeteries</p>
-                <p className="text-3xl font-bold text-gray-900">0</p>
+                <p className="text-3xl font-bold text-gray-900">
+                  {loading ? '...' : stats.totalCemeteries}
+                </p>
               </div>
               <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
                 <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -30,7 +99,9 @@ export default function DashboardPage() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-gray-600">Total Grave Plots</p>
-                <p className="text-3xl font-bold text-gray-900">0</p>
+                <p className="text-3xl font-bold text-gray-900">
+                  {loading ? '...' : stats.totalPlots}
+                </p>
               </div>
               <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
                 <svg className="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -44,7 +115,9 @@ export default function DashboardPage() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-gray-600">Occupied Plots</p>
-                <p className="text-3xl font-bold text-gray-900">0</p>
+                <p className="text-3xl font-bold text-gray-900">
+                  {loading ? '...' : stats.occupiedPlots}
+                </p>
               </div>
               <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center">
                 <svg className="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -58,7 +131,9 @@ export default function DashboardPage() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-gray-600">Available Plots</p>
-                <p className="text-3xl font-bold text-gray-900">0</p>
+                <p className="text-3xl font-bold text-gray-900">
+                  {loading ? '...' : stats.availablePlots}
+                </p>
               </div>
               <div className="w-12 h-12 bg-yellow-100 rounded-lg flex items-center justify-center">
                 <svg className="w-6 h-6 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">

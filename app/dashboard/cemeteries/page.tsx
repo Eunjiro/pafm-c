@@ -1,9 +1,8 @@
+'use client';
+
+import { useState, useEffect } from 'react';
 import Navbar from '@/components/Navbar';
 import Link from 'next/link';
-import { query } from '@/lib/db';
-
-export const dynamic = 'force-dynamic';
-export const revalidate = 0;
 
 interface Cemetery {
   id: number;
@@ -16,17 +15,59 @@ interface Cemetery {
   created_at: Date;
 }
 
-async function getCemeteries() {
-  const cemeteries = await query<Cemetery>(`
-    SELECT id, name, city, state, total_area, established_year, is_active, created_at
-    FROM cemeteries
-    ORDER BY name ASC
-  `);
-  return cemeteries;
-}
+export default function CemeteriesPage() {
+  const [cemeteries, setCemeteries] = useState<Cemetery[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [deleteId, setDeleteId] = useState<number | null>(null);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
 
-export default async function CemeteriesPage() {
-  const cemeteries = await getCemeteries();
+  useEffect(() => {
+    fetchCemeteries();
+  }, []);
+
+  async function fetchCemeteries() {
+    try {
+      const response = await fetch('/api/cemeteries');
+      const data = await response.json();
+      setCemeteries(data.cemeteries || []);
+    } catch (error) {
+      console.error('Error fetching cemeteries:', error);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function handleDelete(id: number) {
+    try {
+      const response = await fetch(`/api/cemeteries/${id}`, {
+        method: 'DELETE',
+      });
+
+      if (response.ok) {
+        // Remove from local state
+        setCemeteries(cemeteries.filter(c => c.id !== id));
+        setShowDeleteModal(false);
+        setDeleteId(null);
+      } else {
+        const data = await response.json();
+        alert(data.error || 'Failed to delete cemetery');
+      }
+    } catch (error) {
+      console.error('Error deleting cemetery:', error);
+      alert('Failed to delete cemetery');
+    }
+  }
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <Navbar />
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <div className="text-center py-12">Loading...</div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -147,7 +188,13 @@ export default async function CemeteriesPage() {
                       >
                         Edit
                       </Link>
-                      <button className="text-red-600 hover:text-red-900">
+                      <button 
+                        onClick={() => {
+                          setDeleteId(cemetery.id);
+                          setShowDeleteModal(true);
+                        }}
+                        className="text-red-600 hover:text-red-900"
+                      >
                         Delete
                       </button>
                     </td>
@@ -155,6 +202,35 @@ export default async function CemeteriesPage() {
                 ))}
               </tbody>
             </table>
+          </div>
+        )}
+
+        {/* Delete Confirmation Modal */}
+        {showDeleteModal && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">Delete Cemetery</h3>
+              <p className="text-gray-600 mb-6">
+                Are you sure you want to delete this cemetery? This action cannot be undone and will also delete all associated plots and burials.
+              </p>
+              <div className="flex justify-end gap-3">
+                <button
+                  onClick={() => {
+                    setShowDeleteModal(false);
+                    setDeleteId(null);
+                  }}
+                  className="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={() => deleteId && handleDelete(deleteId)}
+                  className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+                >
+                  Delete
+                </button>
+              </div>
+            </div>
           </div>
         )}
       </div>

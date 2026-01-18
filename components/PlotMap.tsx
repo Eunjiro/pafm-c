@@ -730,24 +730,34 @@ export default function PlotMap({
                 <div className="hidden sm:block w-px h-6 bg-gray-300 mx-1"></div>
                 <button
                   onClick={() => {
-                    const newRotation = (templateRotationLocal - 15 + 360) % 360;
+                    const newRotation = (templateRotationLocal - 10 + 360) % 360;
                     setTemplateRotationLocal(newRotation);
                   }}
                   className="px-2 py-1.5 text-xs bg-white border border-gray-300 rounded-md hover:bg-gray-50 transition-colors"
-                  title="Rotate left 15°"
+                  title="Rotate left 10°"
                 >
                   ↺
                 </button>
-                <div className="px-2 py-1 text-[10px] font-bold text-indigo-600 bg-indigo-50 rounded border border-indigo-200 min-w-[45px] text-center">
-                  {templateRotationLocal}°
-                </div>
+                <input
+                  type="number"
+                  min="0"
+                  max="359"
+                  value={templateRotationLocal}
+                  onChange={(e) => {
+                    const value = parseInt(e.target.value) || 0;
+                    const normalized = ((value % 360) + 360) % 360;
+                    setTemplateRotationLocal(normalized);
+                  }}
+                  className="w-14 px-1 py-1 text-[10px] font-bold text-indigo-600 bg-indigo-50 rounded border border-indigo-200 text-center focus:outline-none focus:ring-2 focus:ring-indigo-400"
+                  title="Enter rotation angle (0-359°)"
+                />
                 <button
                   onClick={() => {
-                    const newRotation = (templateRotationLocal + 15) % 360;
+                    const newRotation = (templateRotationLocal + 10) % 360;
                     setTemplateRotationLocal(newRotation);
                   }}
                   className="px-2 py-1.5 text-xs bg-white border border-gray-300 rounded-md hover:bg-gray-50 transition-colors"
-                  title="Rotate right 15°"
+                  title="Rotate right 10°"
                 >
                   ↻
                 </button>
