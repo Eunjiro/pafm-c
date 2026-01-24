@@ -40,12 +40,21 @@ PGUSER=postgres
 PGPASSWORD=your_password
 PGDATABASE=pafm_db
 NODE_ENV=development
+
+# Optional: AI-Powered Natural Language Search
+OPENAI_API_KEY=your-openai-api-key-here
 ```
 
 **Generate JWT Secret:**
 ```bash
 node -e "console.log(require('crypto').randomBytes(32).toString('base64'))"
 ```
+
+**Get OpenAI API Key (Optional):**
+1. Go to https://platform.openai.com/api-keys
+2. Create a new API key
+3. Add it to `.env.local` as `OPENAI_API_KEY`
+4. Note: AI search will fallback to basic parsing if key is not provided
 
 ### 3. Test Database Connection
 

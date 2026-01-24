@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState, useRef } from 'react';
-import { MapContainer, TileLayer, Marker, Polyline, useMap } from 'react-leaflet';
+import { MapContainer, TileLayer, Marker, Polyline, Polygon, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 
@@ -134,88 +134,12 @@ export default function GraveLocatorMap({
 }: GraveLocatorMapProps) {
   const [isMounted, setIsMounted] = useState(false);
   const [map, setMap] = useState<L.Map | null>(null);
-  const highlightMarkerRef = useRef<L.Marker | null>(null);
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const center: [number, number] = centerCoordinates || [cemetery.latitude, cemetery.longitude];
 
   useEffect(() => {
     setIsMounted(true);
   }, []);
-
-  // Handle highlighting marker
-  useEffect(() => {
-    if (!map || !highlightedPlotId) {
-      if (highlightMarkerRef.current) {
-        map?.removeLayer(highlightMarkerRef.current);
-        highlightMarkerRef.current = null;
-      }
-      return;
-    }
-
-    const highlightedPlot = plots.find(p => p.id === highlightedPlotId);
-    if (!highlightedPlot) return;
-
-    const coords = highlightedPlot.map_coordinates;
-    if (!coords || !Array.isArray(coords) || coords.length === 0) return;
-
-    // Calculate center of the plot
-    const latSum = coords.reduce((sum: number, coord: [number, number]) => sum + coord[0], 0);
-    const lngSum = coords.reduce((sum: number, coord: [number, number]) => sum + coord[1], 0);
-    const centerLat = latSum / coords.length;
-    const centerLng = lngSum / coords.length;
-
-    // Create a pulsing marker at the plot center
-    const pulsingIcon = L.divIcon({
-      className: 'highlight-marker',
-      html: `
-        <div style="
-          position: relative;
-          width: 40px;
-          height: 40px;
-        ">
-          <div style="
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            width: 20px;
-            height: 20px;
-            background-color: #ef4444;
-            border: 3px solid white;
-            border-radius: 50%;
-            box-shadow: 0 0 10px rgba(239, 68, 68, 0.8);
-            animation: pulse 2s infinite;
-          "></div>
-          <style>
-            @keyframes pulse {
-              0% {
-                box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7);
-              }
-              70% {
-                box-shadow: 0 0 0 20px rgba(239, 68, 68, 0);
-              }
-              100% {
-                box-shadow: 0 0 0 0 rgba(239, 68, 68, 0);
-              }
-            }
-          </style>
-        </div>
-      `,
-      iconSize: [40, 40],
-      iconAnchor: [20, 20]
-    });
-
-    // Remove old marker if it exists
-    if (highlightMarkerRef.current) {
-      map.removeLayer(highlightMarkerRef.current);
-    }
-
-    // Add new marker
-    highlightMarkerRef.current = L.marker([centerLat, centerLng], { 
-      icon: pulsingIcon,
-      zIndexOffset: 1000 
-    }).addTo(map);
-  }, [map, highlightedPlotId, plots]);
 
   const getPlotColor = (status: string) => {
     switch (status) {
@@ -250,6 +174,22 @@ export default function GraveLocatorMap({
 
   return (
     <div className="h-full w-full relative">
+      <style jsx global>{`
+        .pulse-polygon {
+          animation: pulse-glow 2s infinite;
+        }
+        @keyframes pulse-glow {
+          0% {
+            filter: drop-shadow(0 0 2px rgba(239, 68, 68, 0.8));
+          }
+          50% {
+            filter: drop-shadow(0 0 8px rgba(239, 68, 68, 1)) drop-shadow(0 0 12px rgba(239, 68, 68, 0.6));
+          }
+          100% {
+            filter: drop-shadow(0 0 2px rgba(239, 68, 68, 0.8));
+          }
+        }
+      `}</style>
       {isMounted && (
         <MapContainer
           key={`map-${cemetery.id}`}
@@ -306,6 +246,28 @@ export default function GraveLocatorMap({
             }}
           />
         )}
+
+        {/* Highlighted Plot - Show actual plot polygon with red highlight */}
+        {highlightedPlotId && plots
+          .filter(plot => plot.id === highlightedPlotId)
+          .map(plot => {
+            const coords = plot.map_coordinates;
+            if (!coords || !Array.isArray(coords) || coords.length === 0) return null;
+            
+            return (
+              <Polygon
+                key={`highlight-${plot.id}`}
+                positions={coords}
+                pathOptions={{
+                  color: '#ef4444',
+                  fillColor: '#ef4444',
+                  fillOpacity: 0.4,
+                  weight: 4,
+                  className: 'pulse-polygon'
+                }}
+              />
+            );
+          })}
       </MapContainer>
       )}
 

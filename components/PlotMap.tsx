@@ -681,7 +681,7 @@ export default function PlotMap({
         {/* Mapping Tools - Compact Panel */}
         <div className="bg-white rounded-lg shadow-md border border-gray-200">
           <div className="flex items-center gap-1 p-1.5 flex-wrap">
-            {/* Custom Polygon Button */}
+            {/* Select Mode Button */}
             <button
               onClick={() => onTemplateChange && onTemplateChange(null)}
               className={`px-2.5 py-1.5 text-xs rounded-md border transition-all whitespace-nowrap ${
@@ -689,10 +689,10 @@ export default function PlotMap({
                   ? 'bg-indigo-600 text-white border-indigo-600 shadow-sm font-medium'
                   : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
               }`}
-              title="Draw custom polygon"
+              title="Select mode - Click plots to view/edit"
             >
-              <span className="hidden sm:inline">Custom</span>
-              <span className="sm:hidden">✏️</span>
+              <span className="hidden sm:inline">Select</span>
+              <span className="sm:hidden">👆</span>
             </button>
 
             {/* Template Buttons */}

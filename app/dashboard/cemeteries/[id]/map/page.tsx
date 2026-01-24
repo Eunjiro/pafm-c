@@ -103,6 +103,8 @@ export default function CemeteryMapPage() {
   const [selectedFacilityCoordinates, setSelectedFacilityCoordinates] = useState<[number, number][] | null>(null);
   const [selectedFacility, setSelectedFacility] = useState<Facility | null>(null);
   const [showFacilityEditModal, setShowFacilityEditModal] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const plotsPerPage = 5;
 
   // Common cemetery plot templates (width x length in meters)
   const plotTemplates = [
@@ -201,6 +203,9 @@ export default function CemeteryMapPage() {
     fetchAllBurials();
     setShowPlotForm(false);
     setSelectedCoordinates(null);
+    // Reset to select mode (clear template selection)
+    setSelectedTemplate(null);
+    setTemplateRotation(0);
   };
 
   const handlePlotEdited = async (plotId: number, coordinates: [number, number][]) => {
@@ -445,13 +450,10 @@ export default function CemeteryMapPage() {
             
             {mappingMode === 'plots' && !showPlotForm && !showEditModal && (
               <div className="bg-white rounded-lg shadow p-6">
-                <h3 className="text-lg font-semibold text-gray-900 mb-2">Plot Mapping</h3>
-                <p className="text-sm text-gray-600 mb-4">
-                  Click and draw on the map to create a new grave plot. Click existing plots to edit them.
-                </p>
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">Grave Plots</h3>
 
                 {/* Filter Controls */}
-                <div className="border-t border-gray-200 pt-4 mt-4">
+                <div className="mb-4">
                   <h4 className="text-sm font-semibold text-gray-900 mb-3">Filter Plots</h4>
                   <button
                     onClick={() => setShowOnlyVacant(!showOnlyVacant)}
@@ -482,6 +484,99 @@ export default function CemeteryMapPage() {
                       }).length}
                     </span>
                   </button>
+                </div>
+
+                {/* Plot List */}
+                <div className="border-t border-gray-200 pt-4">
+                  <h4 className="text-sm font-semibold text-gray-900 mb-3">
+                    All Plots ({plots.length})
+                  </h4>
+                  {plots.length > 0 ? (
+                    <>
+                      <div className="space-y-2">
+                        {plots
+                          .filter(plot => {
+                            if (!showOnlyVacant) return true;
+                            const occupied = allBurials.filter(b => b.plot_id === plot.id).length;
+                            return occupied < (plot.layers || 1);
+                          })
+                          .slice((currentPage - 1) * plotsPerPage, currentPage * plotsPerPage)
+                          .map((plot) => {
+                            const occupied = allBurials.filter(b => b.plot_id === plot.id).length;
+                            const capacity = plot.layers || 1;
+                            const isAvailable = occupied < capacity;
+                            
+                            return (
+                              <button
+                                key={plot.id}
+                                onClick={() => handleSelectPlot(plot)}
+                                className="w-full p-3 border border-gray-200 rounded-lg hover:bg-gray-50 text-left transition-colors"
+                              >
+                                <div className="flex items-center justify-between">
+                                  <div className="flex-1">
+                                    <div className="font-medium text-gray-900">Plot {plot.plot_number}</div>
+                                    <div className="text-xs text-gray-500 capitalize mt-1">
+                                      {plot.plot_type || 'Standard'}
+                                    </div>
+                                    <div className="flex items-center gap-2 mt-1">
+                                      <span className={`text-xs px-2 py-0.5 rounded-full ${
+                                        isAvailable 
+                                          ? 'bg-green-100 text-green-700' 
+                                          : 'bg-red-100 text-red-700'
+                                      }`}>
+                                        {occupied}/{capacity} {capacity === 1 ? 'layer' : 'layers'}
+                                      </span>
+                                    </div>
+                                  </div>
+                                  <div className={`w-3 h-3 rounded-full ${
+                                    isAvailable ? 'bg-green-500' : 'bg-red-500'
+                                  }`}></div>
+                                </div>
+                              </button>
+                            );
+                          })}
+                      </div>
+                      
+                      {/* Pagination */}
+                      {(() => {
+                        const filteredPlots = plots.filter(plot => {
+                          if (!showOnlyVacant) return true;
+                          const occupied = allBurials.filter(b => b.plot_id === plot.id).length;
+                          return occupied < (plot.layers || 1);
+                        });
+                        const totalPages = Math.ceil(filteredPlots.length / plotsPerPage);
+                        
+                        if (totalPages <= 1) return null;
+                        
+                        return (
+                          <div className="flex items-center justify-between mt-4 pt-4 border-t border-gray-200">
+                            <button
+                              onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                              disabled={currentPage === 1}
+                              className="px-3 py-1 text-sm border border-gray-300 rounded hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                              ← Prev
+                            </button>
+                            <span className="text-sm text-gray-600">
+                              Page {currentPage} of {totalPages}
+                            </span>
+                            <button
+                              onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                              disabled={currentPage === totalPages}
+                              className="px-3 py-1 text-sm border border-gray-300 rounded hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                              Next →
+                            </button>
+                          </div>
+                        );
+                      })()}
+                    </>
+                  ) : (
+                    <div className="text-center py-8 text-gray-500 text-sm">
+                      <p>No plots created yet</p>
+                      <p className="mt-2">Draw on the map to create a plot</p>
+                    </div>
+                  )}
                 </div>
               </div>
             )}
