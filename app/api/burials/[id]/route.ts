@@ -10,7 +10,7 @@ const burialSchema = z.object({
   notes: z.string().optional(),
 });
 
-// GET single burial
+// GET single burial with expiration info
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -18,7 +18,16 @@ export async function GET(
   try {
     const { id } = await params;
     const burial = await queryOne(
-      `SELECT b.*, d.first_name, d.last_name, d.date_of_birth, d.date_of_death
+      `SELECT b.*, d.first_name, d.last_name, d.date_of_birth, d.date_of_death,
+       CASE 
+         WHEN b.expiration_date IS NOT NULL AND b.expiration_date < CURRENT_DATE THEN TRUE
+         ELSE FALSE
+       END as is_expired_status,
+       CASE 
+         WHEN b.expiration_date IS NOT NULL THEN 
+           EXTRACT(DAY FROM (b.expiration_date::timestamp - CURRENT_DATE::timestamp))
+         ELSE NULL
+       END as days_until_expiration
        FROM burials b
        JOIN deceased_persons d ON b.deceased_id = d.id
        WHERE b.id = $1`,

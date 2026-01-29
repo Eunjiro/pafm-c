@@ -11,7 +11,10 @@
     "db:migrate": "tsx scripts/migrate.ts",
     "db:seed": "tsx scripts/seed.ts",
     "db:migrate:cemetery": "tsx scripts/migrate-cemetery.ts",
-    "db:clear-attempts": "tsx scripts/clear-login-attempts.ts"
+    "db:migrate:facilities": "tsx scripts/migrate-facilities.ts",
+    "db:migrate:reservation": "tsx scripts/migrate-reservation-expiration.ts",
+    "db:clear-attempts": "tsx scripts/clear-login-attempts.ts",
+    "db:check-expiration": "tsx scripts/check-fix-expiration.ts"
   },
   "dependencies": {
     "@types/leaflet": "^1.9.21",

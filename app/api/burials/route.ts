@@ -10,6 +10,14 @@ const burialSchema = z.object({
   notes: z.string().optional(),
 });
 
+// Helper function to calculate expiration date (5 years from burial)
+function calculateExpirationDate(burialDate: string | null): string | null {
+  if (!burialDate) return null;
+  const date = new Date(burialDate);
+  date.setFullYear(date.getFullYear() + 5);
+  return date.toISOString().split('T')[0];
+}
+
 // GET all burials for a plot or cemetery
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
@@ -27,9 +35,18 @@ export async function GET(request: NextRequest) {
     let burials;
     
     if (plotId) {
-      // Get burials for a specific plot
+      // Get burials for a specific plot with expiration info
       burials = await query(
-        `SELECT b.*, d.first_name, d.last_name, d.date_of_birth, d.date_of_death
+        `SELECT b.*, d.first_name, d.last_name, d.date_of_birth, d.date_of_death,
+         CASE 
+           WHEN b.expiration_date IS NOT NULL AND b.expiration_date < CURRENT_DATE THEN TRUE
+           ELSE FALSE
+         END as is_expired,
+         CASE 
+           WHEN b.expiration_date IS NOT NULL THEN 
+             EXTRACT(DAY FROM (b.expiration_date::timestamp - CURRENT_DATE::timestamp))
+           ELSE NULL
+         END as days_until_expiration
          FROM burials b
          JOIN deceased_persons d ON b.deceased_id = d.id
          WHERE b.plot_id = $1
@@ -37,9 +54,18 @@ export async function GET(request: NextRequest) {
         [plotId]
       );
     } else {
-      // Get all burials for cemetery
+      // Get all burials for cemetery with expiration info
       burials = await query(
-        `SELECT b.*, d.first_name, d.last_name, d.date_of_birth, d.date_of_death
+        `SELECT b.*, d.first_name, d.last_name, d.date_of_birth, d.date_of_death,
+         CASE 
+           WHEN b.expiration_date IS NOT NULL AND b.expiration_date < CURRENT_DATE THEN TRUE
+           ELSE FALSE
+         END as is_expired,
+         CASE 
+           WHEN b.expiration_date IS NOT NULL THEN 
+             EXTRACT(DAY FROM (b.expiration_date::timestamp - CURRENT_DATE::timestamp))
+           ELSE NULL
+         END as days_until_expiration
          FROM burials b
          JOIN deceased_persons d ON b.deceased_id = d.id
          JOIN grave_plots gp ON b.plot_id = gp.id
@@ -65,16 +91,20 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const validatedData = burialSchema.parse(body);
 
+    // Calculate expiration date (5 years from burial)
+    const expirationDate = calculateExpirationDate(validatedData.burial_date || null);
+
     const result = await query(
       `INSERT INTO burials (
-        plot_id, deceased_id, layer, burial_date, notes
-      ) VALUES ($1, $2, $3, $4, $5)
+        plot_id, deceased_id, layer, burial_date, expiration_date, notes
+      ) VALUES ($1, $2, $3, $4, $5, $6)
       RETURNING *`,
       [
         validatedData.plot_id,
         validatedData.deceased_id,
         validatedData.layer,
         validatedData.burial_date || null,
+        expirationDate,
         validatedData.notes,
       ]
     );
