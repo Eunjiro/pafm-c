@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import dynamic from 'next/dynamic';
-import Navbar from '@/components/Navbar';
+import DashboardLayout from '@/components/DashboardLayout';
 import { getDirections, formatDistance, formatDuration, Route } from '@/lib/openrouteservice';
 
 const GraveLocatorMap = dynamic(() => import('@/components/GraveLocatorMap'), { ssr: false });
@@ -283,40 +283,36 @@ export default function GraveLocatorPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50">
-        <Navbar />
-        <div className="flex items-center justify-center h-[calc(100vh-64px)]">
-          <p className="text-gray-500">Loading...</p>
+      <DashboardLayout>
+        <div className="flex items-center justify-center h-[calc(100vh-200px)]">
+          <p className="text-slate-500">Loading...</p>
         </div>
-      </div>
+      </DashboardLayout>
     );
   }
 
   if (!cemetery) {
     return (
-      <div className="min-h-screen bg-gray-50">
-        <Navbar />
-        <div className="flex items-center justify-center h-[calc(100vh-64px)]">
+      <DashboardLayout>
+        <div className="flex items-center justify-center h-[calc(100vh-200px)]">
           <p className="text-red-500">Cemetery not found</p>
         </div>
-      </div>
+      </DashboardLayout>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <Navbar />
-      
-      <div className="w-full px-4 py-4">
+    <DashboardLayout>
+      <div className="space-y-4">
         {/* Header */}
-        <div className="mb-4">
-          <h1 className="text-2xl font-bold text-gray-900">{cemetery.name} - Grave Locator</h1>
-          <p className="text-sm text-gray-600">Search for deceased persons and navigate to their graves</p>
+        <div>
+          <h1 className="text-3xl font-bold text-slate-800">{cemetery.name} - Grave Locator</h1>
+          <p className="text-sm text-slate-600 mt-1">Search for deceased persons and navigate to their graves</p>
         </div>
 
         {/* Enable Location Button - Show if no location */}
         {!userLocation && !locationError && (
-          <div className="mb-4 bg-gradient-to-r from-blue-500 to-blue-600 rounded-lg p-6 text-white shadow-lg">
+          <div className="bg-gradient-to-r from-green-500 to-green-600 rounded-xl p-6 text-white shadow-lg">
             <div className="flex items-center justify-between">
               <div className="flex-1">
                 <div className="flex items-center gap-2 mb-2">
@@ -325,12 +321,12 @@ export default function GraveLocatorPage() {
                   </svg>
                   <h3 className="text-xl font-bold">Enable Location Access</h3>
                 </div>
-                <p className="text-blue-100 text-sm mb-4">
+                <p className="text-green-100 text-sm mb-4">
                   Click the button below to allow location access. Your browser will show a permission prompt at the top.
                 </p>
                 <button
                   onClick={requestLocation}
-                  className="bg-white text-blue-600 px-8 py-3 rounded-lg font-bold text-lg hover:bg-blue-50 transition-all shadow-md hover:shadow-xl transform hover:scale-105 flex items-center gap-2 justify-center"
+                  className="bg-white text-green-600 px-8 py-3 rounded-lg font-bold text-lg hover:bg-green-50 transition-all shadow-md hover:shadow-xl transform hover:scale-105 flex items-center gap-2 justify-center"
                 >
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 11V7a4 4 0 118 0m-4 8v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2z" />
@@ -381,7 +377,7 @@ export default function GraveLocatorPage() {
         )}
 
         {/* Search Bar */}
-        <div className="mb-4 relative z-50">
+        <div className="relative z-50">
           <form onSubmit={handleSearch} className="relative">
             <div className="relative">
               <input
@@ -394,7 +390,7 @@ export default function GraveLocatorPage() {
                   }
                 }}
                 placeholder="Search by name (e.g., John Doe)"
-                className="w-full px-4 py-3 pr-12 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 text-base z-50"
+                className="w-full px-4 py-3 pr-12 border-2 border-green-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 text-base z-50"
                 autoComplete="off"
               />
               {isSearching && (
@@ -626,6 +622,6 @@ export default function GraveLocatorPage() {
           />
         </div>
       </div>
-    </div>
+    </DashboardLayout>
   );
 }

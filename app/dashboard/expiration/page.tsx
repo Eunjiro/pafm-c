@@ -13,8 +13,8 @@ export default function ExpirationPage() {
         {/* Simple Header */}
         <div className="flex justify-between items-center">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900">Expiration Management</h1>
-            <p className="text-gray-600 mt-1">Monitor burial expirations and plot reservations</p>
+            <h1 className="text-3xl font-bold text-slate-800">Expiration Management</h1>
+            <p className="text-slate-600 mt-1">Monitor burial expirations and plot reservations</p>
           </div>
           <button
             onClick={() => setRefreshKey(prev => prev + 1)}

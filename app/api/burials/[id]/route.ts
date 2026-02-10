@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { query, queryOne } from '@/lib/db';
+import { createLog, getClientInfo } from '@/lib/logger';
 
 const burialSchema = z.object({
   plot_id: z.number().int().positive().optional(),
@@ -84,6 +85,27 @@ export async function PUT(
       );
     }
 
+    // Get deceased person info for logging
+    const burialInfo = await queryOne(
+      `SELECT d.first_name, d.last_name, b.plot_id 
+       FROM burials b
+       JOIN deceased_persons d ON b.deceased_id = d.id
+       WHERE b.id = $1`,
+      [id]
+    );
+
+    // Log the burial update
+    const { ipAddress, userAgent } = getClientInfo(request);
+    await createLog({
+      action: 'burial_update',
+      description: `Updated burial for ${burialInfo?.first_name || ''} ${burialInfo?.last_name || ''} (Plot ID: ${burialInfo?.plot_id || 'unknown'})`,
+      resourceType: 'burial',
+      resourceId: Number(id),
+      ipAddress,
+      userAgent,
+      status: 'success',
+    });
+
     return NextResponse.json(
       { burial: result[0], message: 'Burial updated successfully' },
       { status: 200 }
@@ -111,6 +133,16 @@ export async function DELETE(
 ) {
   try {
     const { id } = await params;
+    
+    // Get burial info before deletion for logging
+    const burialInfo = await queryOne(
+      `SELECT d.first_name, d.last_name, b.plot_id 
+       FROM burials b
+       JOIN deceased_persons d ON b.deceased_id = d.id
+       WHERE b.id = $1`,
+      [id]
+    );
+    
     const result = await query(
       'DELETE FROM burials WHERE id = $1 RETURNING plot_id',
       [id]
@@ -122,6 +154,18 @@ export async function DELETE(
         { status: 404 }
       );
     }
+
+    // Log the burial deletion
+    const { ipAddress, userAgent } = getClientInfo(request);
+    await createLog({
+      action: 'burial_delete',
+      description: `Removed burial for ${burialInfo?.first_name || ''} ${burialInfo?.last_name || ''} from plot ID ${result[0].plot_id}`,
+      resourceType: 'burial',
+      resourceId: Number(id),
+      ipAddress,
+      userAgent,
+      status: 'success',
+    });
 
     // Note: Plot status is now determined by individual layer occupancy
 

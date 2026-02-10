@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { query, queryOne } from '@/lib/db';
+import { createLog, getClientInfo } from '@/lib/logger';
 
 const plotSchema = z.object({
   cemetery_id: z.number().int().positive().optional(),
@@ -101,6 +102,18 @@ export async function PUT(
       );
     }
 
+    // Log the plot update
+    const { ipAddress, userAgent } = getClientInfo(request);
+    await createLog({
+      action: 'plot_update',
+      description: `Updated plot ${validatedData.plot_number}`,
+      resourceType: 'plot',
+      resourceId: Number(id),
+      ipAddress,
+      userAgent,
+      status: 'success',
+    });
+
     return NextResponse.json(
       { plot: result[0], message: 'Plot updated successfully' },
       { status: 200 }
@@ -128,6 +141,13 @@ export async function DELETE(
 ) {
   try {
     const { id } = await params;
+    
+    // Get plot info before deletion for logging
+    const plotInfo = await queryOne(
+      'SELECT plot_number FROM grave_plots WHERE id = $1',
+      [id]
+    );
+    
     const result = await query(
       'DELETE FROM grave_plots WHERE id = $1 RETURNING id',
       [id]
@@ -139,6 +159,18 @@ export async function DELETE(
         { status: 404 }
       );
     }
+
+    // Log the plot deletion
+    const { ipAddress, userAgent } = getClientInfo(request);
+    await createLog({
+      action: 'plot_delete',
+      description: `Deleted plot ${plotInfo?.plot_number || id}`,
+      resourceType: 'plot',
+      resourceId: Number(id),
+      ipAddress,
+      userAgent,
+      status: 'success',
+    });
 
     return NextResponse.json(
       { message: 'Plot deleted successfully' },

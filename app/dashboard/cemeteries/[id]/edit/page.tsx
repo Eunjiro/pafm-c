@@ -2,14 +2,14 @@
 
 import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import Navbar from '@/components/Navbar';
+import DashboardLayout from '@/components/DashboardLayout';
 import dynamic from 'next/dynamic';
 
 const CemeteryMap = dynamic(() => import('@/components/CemeteryMap'), {
   ssr: false,
   loading: () => (
-    <div className="h-[600px] w-full rounded-lg overflow-hidden border border-gray-300 flex items-center justify-center bg-gray-50">
-      <p className="text-gray-500">Loading map...</p>
+    <div className="h-[600px] w-full rounded-xl overflow-hidden border border-green-200 flex items-center justify-center bg-green-50">
+      <p className="text-slate-500">Loading map...</p>
     </div>
   ),
 });
@@ -145,32 +145,31 @@ export default function EditCemeteryPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50">
-        <Navbar />
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <div className="text-center py-12">Loading...</div>
+      <DashboardLayout>
+        <div className="text-center py-12">
+          <div className="text-slate-500">Loading cemetery...</div>
         </div>
-      </div>
+      </DashboardLayout>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <Navbar />
-      
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">Edit Cemetery</h1>
-          <p className="mt-2 text-gray-600">Update cemetery information and adjust boundaries</p>
+    <DashboardLayout>
+      <div className="space-y-6">
+        <div className="flex justify-between items-center">
+          <div>
+            <h1 className="text-3xl font-bold text-slate-800">Edit Cemetery</h1>
+            <p className="text-slate-600 mt-1">Update cemetery information and adjust boundaries</p>
+          </div>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-8">
+        <form onSubmit={handleSubmit} className="space-y-6">
           {/* Basic Information */}
-          <div className="bg-white rounded-lg shadow p-6 space-y-6">
-            <h2 className="text-xl font-semibold text-gray-900 mb-4">Basic Information</h2>
+          <div className="bg-white rounded-xl shadow-sm border border-green-100 p-6 space-y-6">
+            <h2 className="text-xl font-semibold text-slate-800 mb-4">Basic Information</h2>
           {/* Name */}
           <div>
-            <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">
+            <label htmlFor="name" className="block text-sm font-medium text-slate-700 mb-1">
               Cemetery Name *
             </label>
             <input
@@ -178,7 +177,7 @@ export default function EditCemeteryPage() {
               id="name"
               value={formData.name}
               onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              className="w-full px-3 py-2 border border-green-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500"
               required
             />
             {errors.name && <p className="text-red-500 text-sm mt-1">{errors.name}</p>}
@@ -186,7 +185,7 @@ export default function EditCemeteryPage() {
 
           {/* Address */}
           <div>
-            <label htmlFor="address" className="block text-sm font-medium text-gray-700 mb-1">
+            <label htmlFor="address" className="block text-sm font-medium text-slate-700 mb-1">
               Address
             </label>
             <input
@@ -194,14 +193,14 @@ export default function EditCemeteryPage() {
               id="address"
               value={formData.address}
               onChange={(e) => setFormData({ ...formData, address: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              className="w-full px-3 py-2 border border-green-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500"
             />
           </div>
 
           {/* City, State, Country */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
-              <label htmlFor="city" className="block text-sm font-medium text-gray-700 mb-1">
+              <label htmlFor="city" className="block text-sm font-medium text-slate-700 mb-1">
                 City
               </label>
               <input
@@ -209,12 +208,12 @@ export default function EditCemeteryPage() {
                 id="city"
                 value={formData.city}
                 onChange={(e) => setFormData({ ...formData, city: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                className="w-full px-3 py-2 border border-green-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500"
               />
             </div>
 
             <div>
-              <label htmlFor="state" className="block text-sm font-medium text-gray-700 mb-1">
+              <label htmlFor="state" className="block text-sm font-medium text-slate-700 mb-1">
                 State
               </label>
               <input
@@ -222,12 +221,12 @@ export default function EditCemeteryPage() {
                 id="state"
                 value={formData.state}
                 onChange={(e) => setFormData({ ...formData, state: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                className="w-full px-3 py-2 border border-green-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500"
               />
             </div>
 
             <div>
-              <label htmlFor="country" className="block text-sm font-medium text-gray-700 mb-1">
+              <label htmlFor="country" className="block text-sm font-medium text-slate-700 mb-1">
                 Country
               </label>
               <input
@@ -235,14 +234,14 @@ export default function EditCemeteryPage() {
                 id="country"
                 value={formData.country}
                 onChange={(e) => setFormData({ ...formData, country: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                className="w-full px-3 py-2 border border-green-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500"
               />
             </div>
           </div>
 
           {/* Postal Code */}
           <div>
-            <label htmlFor="postal_code" className="block text-sm font-medium text-gray-700 mb-1">
+            <label htmlFor="postal_code" className="block text-sm font-medium text-slate-700 mb-1">
               Postal Code
             </label>
             <input
@@ -250,13 +249,13 @@ export default function EditCemeteryPage() {
               id="postal_code"
               value={formData.postal_code}
               onChange={(e) => setFormData({ ...formData, postal_code: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              className="w-full px-3 py-2 border border-green-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500"
             />
           </div>
 
           {/* Description */}
           <div>
-            <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-1">
+            <label htmlFor="description" className="block text-sm font-medium text-slate-700 mb-1">
               Description
             </label>
             <textarea
@@ -264,14 +263,14 @@ export default function EditCemeteryPage() {
               rows={4}
               value={formData.description}
               onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              className="w-full px-3 py-2 border border-green-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500"
             />
           </div>
 
           {/* Total Area and Established Year */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label htmlFor="total_area" className="block text-sm font-medium text-gray-700 mb-1">
+              <label htmlFor="total_area" className="block text-sm font-medium text-slate-700 mb-1">
                 Total Area (sq m)
               </label>
               <input
@@ -280,13 +279,13 @@ export default function EditCemeteryPage() {
                 step="0.01"
                 value={formData.total_area}
                 onChange={(e) => setFormData({ ...formData, total_area: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                className="w-full px-3 py-2 border border-green-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500"
               />
               {errors.total_area && <p className="text-red-500 text-sm mt-1">{errors.total_area}</p>}
             </div>
 
             <div>
-              <label htmlFor="established_year" className="block text-sm font-medium text-gray-700 mb-1">
+              <label htmlFor="established_year" className="block text-sm font-medium text-slate-700 mb-1">
                 Established Year
               </label>
               <input
@@ -294,7 +293,7 @@ export default function EditCemeteryPage() {
                 id="established_year"
                 value={formData.established_year}
                 onChange={(e) => setFormData({ ...formData, established_year: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                className="w-full px-3 py-2 border border-green-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500"
               />
               {errors.established_year && <p className="text-red-500 text-sm mt-1">{errors.established_year}</p>}
             </div>
@@ -303,7 +302,7 @@ export default function EditCemeteryPage() {
           {/* Coordinates */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label htmlFor="latitude" className="block text-sm font-medium text-gray-700 mb-1">
+              <label htmlFor="latitude" className="block text-sm font-medium text-slate-700 mb-1">
                 Latitude
               </label>
               <input
@@ -312,14 +311,14 @@ export default function EditCemeteryPage() {
                 step="any"
                 value={formData.latitude}
                 onChange={(e) => setFormData({ ...formData, latitude: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                className="w-full px-3 py-2 border border-green-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500"
                 placeholder="e.g., 40.7128"
               />
               {errors.latitude && <p className="text-red-500 text-sm mt-1">{errors.latitude}</p>}
             </div>
 
             <div>
-              <label htmlFor="longitude" className="block text-sm font-medium text-gray-700 mb-1">
+              <label htmlFor="longitude" className="block text-sm font-medium text-slate-700 mb-1">
                 Longitude
               </label>
               <input
@@ -328,7 +327,7 @@ export default function EditCemeteryPage() {
                 step="any"
                 value={formData.longitude}
                 onChange={(e) => setFormData({ ...formData, longitude: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                className="w-full px-3 py-2 border border-green-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500"
                 placeholder="e.g., -74.0060"
               />
               {errors.longitude && <p className="text-red-500 text-sm mt-1">{errors.longitude}</p>}
@@ -342,18 +341,18 @@ export default function EditCemeteryPage() {
               id="is_active"
               checked={formData.is_active}
               onChange={(e) => setFormData({ ...formData, is_active: e.target.checked })}
-              className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
+              className="h-4 w-4 text-green-600 focus:ring-green-500 border-green-300 rounded"
             />
-            <label htmlFor="is_active" className="ml-2 block text-sm text-gray-700">
+            <label htmlFor="is_active" className="ml-2 block text-sm text-slate-700">
               Active
             </label>
           </div>
           </div>
 
           {/* Cemetery Boundary Map */}
-          <div className="bg-white rounded-lg shadow p-6">
-            <h2 className="text-xl font-semibold text-gray-900 mb-4">Cemetery Boundary</h2>
-            <p className="text-sm text-gray-600 mb-4">
+          <div className="bg-white rounded-xl shadow-sm border border-green-100 p-6">
+            <h2 className="text-xl font-semibold text-slate-800 mb-4">Cemetery Boundary</h2>
+            <p className="text-sm text-slate-600 mb-4">
               Draw or adjust the cemetery boundary on the map. Click on the map to add points, and close the polygon to complete the boundary.
             </p>
             
@@ -381,15 +380,15 @@ export default function EditCemeteryPage() {
           <div className="flex justify-end gap-3 pt-4">
             <button
               type="button"
-              onClick={() => router.push('/dashboard/cemeteries')}
-              className="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
+              onClick={() => router.push('/dashboard/cemeteries-manage')}
+              className="px-6 py-2.5 text-slate-700 bg-slate-100 rounded-lg hover:bg-slate-200 transition-colors font-medium"
               disabled={submitting}
             >
               Cancel
             </button>
             <button
               type="submit"
-              className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors disabled:opacity-50"
+              className="px-6 py-2.5 bg-gradient-to-r from-green-600 to-green-700 text-white rounded-lg hover:from-green-700 hover:to-green-800 transition-all shadow-md hover:shadow-lg disabled:opacity-50 font-medium"
               disabled={submitting}
             >
               {submitting ? 'Saving...' : 'Save Changes'}
@@ -397,6 +396,6 @@ export default function EditCemeteryPage() {
           </div>
         </form>
       </div>
-    </div>
+    </DashboardLayout>
   );
 }

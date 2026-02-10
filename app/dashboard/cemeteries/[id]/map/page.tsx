@@ -2,7 +2,7 @@
 
 import { useState, useEffect, ComponentType } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import Navbar from '@/components/Navbar';
+import DashboardLayout from '@/components/DashboardLayout';
 import dynamic from 'next/dynamic';
 
 interface Cemetery {
@@ -69,8 +69,8 @@ const PlotMap = dynamic<PlotMapProps>(
   {
     ssr: false,
     loading: () => (
-      <div className="h-[calc(100vh-200px)] w-full rounded-lg overflow-hidden border border-gray-300 flex items-center justify-center bg-gray-50">
-        <p className="text-gray-500">Loading map...</p>
+      <div className="h-[calc(100vh-200px)] w-full rounded-xl overflow-hidden border-green-200 flex items-center justify-center bg-slate-50">
+        <p className="text-slate-500">Loading map...</p>
       </div>
     ),
   }
@@ -310,40 +310,36 @@ export default function CemeteryMapPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50">
-        <Navbar />
-        <div className="flex items-center justify-center h-[calc(100vh-64px)]">
-          <p className="text-gray-500">Loading...</p>
+      <DashboardLayout>
+        <div className="flex items-center justify-center h-[calc(100vh-200px)]">
+          <p className="text-slate-500">Loading...</p>
         </div>
-      </div>
+      </DashboardLayout>
     );
   }
 
   if (!cemetery) {
     return (
-      <div className="min-h-screen bg-gray-50">
-        <Navbar />
-        <div className="flex items-center justify-center h-[calc(100vh-64px)]">
+      <DashboardLayout>
+        <div className="flex items-center justify-center h-[calc(100vh-200px)]">
           <p className="text-red-500">Cemetery not found</p>
         </div>
-      </div>
+      </DashboardLayout>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <Navbar />
-      
-      <div className="w-full px-2 sm:px-4 lg:px-6 py-4">
-        <div className="mb-4 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 sm:gap-4">
+    <DashboardLayout>
+      <div className="space-y-4">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 sm:gap-4">
           <div className="flex-1">
-            <h1 className="text-lg sm:text-2xl font-bold text-gray-900">{cemetery.name} - Cemetery Mapping</h1>
-            <p className="text-sm text-gray-600">Map plots and facilities</p>
+            <h1 className="text-2xl sm:text-3xl font-bold text-slate-800">{cemetery.name} - Cemetery Mapping</h1>
+            <p className="text-sm text-slate-600 mt-1">Map plots and facilities</p>
           </div>
           <div className="flex gap-2">
             <button
               onClick={() => router.back()}
-              className="px-3 py-2 sm:px-4 text-sm border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors whitespace-nowrap"
+              className="px-3 py-2 sm:px-4 text-sm bg-slate-100 rounded-lg text-slate-700 hover:bg-slate-200 transition-colors whitespace-nowrap font-medium"
             >
               ← Back
             </button>
@@ -351,23 +347,23 @@ export default function CemeteryMapPage() {
         </div>
 
         {/* Mapping Mode Tabs */}
-        <div className="mb-4 flex gap-2 border-b border-gray-200">
+        <div className="flex gap-2 border-b border-green-200 bg-white rounded-t-xl px-2">
           <button
             onClick={() => setMappingMode('plots')}
-            className={`px-4 py-2 font-medium transition-colors border-b-2 ${
+            className={`px-4 py-3 font-medium transition-colors border-b-2 ${
               mappingMode === 'plots'
-                ? 'text-blue-600 border-blue-600'
-                : 'text-gray-500 border-transparent hover:text-gray-700'
+                ? 'text-green-700 border-green-600'
+                : 'text-slate-500 border-transparent hover:text-slate-700'
             }`}
           >
             Plot Mapping
           </button>
           <button
             onClick={() => setMappingMode('facilities')}
-            className={`px-4 py-2 font-medium transition-colors border-b-2 ${
+            className={`px-4 py-3 font-medium transition-colors border-b-2 ${
               mappingMode === 'facilities'
-                ? 'text-blue-600 border-blue-600'
-                : 'text-gray-500 border-transparent hover:text-gray-700'
+                ? 'text-green-700 border-green-600'
+                : 'text-slate-500 border-transparent hover:text-slate-700'
             }`}
           >
             Facility Mapping
@@ -376,39 +372,39 @@ export default function CemeteryMapPage() {
 
         {/* Stats Bar */}
         {mappingMode === 'plots' ? (
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 sm:gap-4 mb-4">
-            <div className="bg-white rounded-lg shadow p-3 sm:p-4">
-              <p className="text-xs sm:text-sm text-gray-600">Total Plots</p>
-              <p className="text-xl sm:text-2xl font-bold text-gray-900">{plots.length}</p>
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 sm:gap-4">
+            <div className="bg-white rounded-xl shadow-sm border border-green-100 p-3 sm:p-4">
+              <p className="text-xs sm:text-sm text-slate-600">Total Plots</p>
+              <p className="text-xl sm:text-2xl font-bold text-slate-800">{plots.length}</p>
             </div>
-            <div className="bg-white rounded-lg shadow p-3 sm:p-4">
-              <p className="text-xs sm:text-sm text-gray-600">Total Capacity</p>
-              <p className="text-xl sm:text-2xl font-bold text-gray-900">
+            <div className="bg-white rounded-xl shadow-sm border border-green-100 p-3 sm:p-4">
+              <p className="text-xs sm:text-sm text-slate-600">Total Capacity</p>
+              <p className="text-xl sm:text-2xl font-bold text-slate-800">
                 {plots.reduce((sum, p) => sum + (p.layers || 1), 0)}
               </p>
             </div>
-            <div className="bg-white rounded-lg shadow p-3 sm:p-4">
-              <p className="text-xs sm:text-sm text-gray-600">Occupied Layers</p>
-              <p className="text-xl sm:text-2xl font-bold text-blue-600">
+            <div className="bg-white rounded-xl shadow-sm border border-green-100 p-3 sm:p-4">
+              <p className="text-xs sm:text-sm text-slate-600">Occupied Layers</p>
+              <p className="text-xl sm:text-2xl font-bold text-green-600">
                 {allBurials.length}
               </p>
             </div>
           </div>
         ) : (
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 sm:gap-4 mb-4">
-            <div className="bg-white rounded-lg shadow p-3 sm:p-4">
-              <p className="text-xs sm:text-sm text-gray-600">Total Facilities</p>
-              <p className="text-xl sm:text-2xl font-bold text-gray-900">{facilities.length}</p>
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 sm:gap-4">
+            <div className="bg-white rounded-xl shadow-sm border border-green-100 p-3 sm:p-4">
+              <p className="text-xs sm:text-sm text-slate-600">Total Facilities</p>
+              <p className="text-xl sm:text-2xl font-bold text-slate-800">{facilities.length}</p>
             </div>
-            <div className="bg-white rounded-lg shadow p-3 sm:p-4">
-              <p className="text-xs sm:text-sm text-gray-600">Facility Types</p>
-              <p className="text-xl sm:text-2xl font-bold text-gray-900">
+            <div className="bg-white rounded-xl shadow-sm border border-green-100 p-3 sm:p-4">
+              <p className="text-xs sm:text-sm text-slate-600">Facility Types</p>
+              <p className="text-xl sm:text-2xl font-bold text-slate-800">
                 {new Set(facilities.map(f => f.facility_type)).size}
               </p>
             </div>
-            <div className="bg-white rounded-lg shadow p-3 sm:p-4">
-              <p className="text-xs sm:text-sm text-gray-600">Latest Added</p>
-              <p className="text-xl sm:text-2xl font-bold text-blue-600">
+            <div className="bg-white rounded-xl shadow-sm border border-green-100 p-3 sm:p-4">
+              <p className="text-xs sm:text-sm text-slate-600">Latest Added</p>
+              <p className="text-xl sm:text-2xl font-bold text-green-600">
                 {facilities.length > 0 ? facilities[facilities.length - 1].name : 'None'}
               </p>
             </div>
@@ -698,7 +694,7 @@ export default function CemeteryMapPage() {
           }}
         />
       )}
-    </div>
+    </DashboardLayout>
   );
 }
 

@@ -39,3 +39,7 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# documentation with sensitive setup info
+PERMIT_SYSTEM_INTEGRATION.md
+PERMITS_SETUP.md

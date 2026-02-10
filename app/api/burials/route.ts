@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { query } from '@/lib/db';
+import { createLog, getClientInfo } from '@/lib/logger';
 
 const burialSchema = z.object({
   plot_id: z.number().int().positive(),
@@ -108,6 +109,27 @@ export async function POST(request: NextRequest) {
         validatedData.notes,
       ]
     );
+
+    // Get deceased person info for logging
+    const deceasedInfo = await query(
+      'SELECT first_name, last_name FROM deceased_persons WHERE id = $1',
+      [validatedData.deceased_id]
+    );
+    const deceasedName = deceasedInfo.length > 0 
+      ? `${deceasedInfo[0].first_name} ${deceasedInfo[0].last_name}`
+      : `ID ${validatedData.deceased_id}`;
+
+    // Log the burial creation
+    const { ipAddress, userAgent } = getClientInfo(request);
+    await createLog({
+      action: 'burial_create',
+      description: `Assigned burial for ${deceasedName} to plot ID ${validatedData.plot_id}, layer ${validatedData.layer}`,
+      resourceType: 'burial',
+      resourceId: result[0].id,
+      ipAddress,
+      userAgent,
+      status: 'success',
+    });
 
     // Note: Plot status is now determined by individual layer occupancy, not overall plot status
 

@@ -13,6 +13,9 @@
     "db:migrate:cemetery": "tsx scripts/migrate-cemetery.ts",
     "db:migrate:facilities": "tsx scripts/migrate-facilities.ts",
     "db:migrate:reservation": "tsx scripts/migrate-reservation-expiration.ts",
+    "db:migrate:logs": "tsx scripts/migrate-logs.ts",
+    "db:migrate:permits": "tsx scripts/migrate-pending-permits.ts",
+    "db:seed:api-key": "tsx scripts/seed-api-key.ts",
     "db:clear-attempts": "tsx scripts/clear-login-attempts.ts",
     "db:check-expiration": "tsx scripts/check-fix-expiration.ts"
   },

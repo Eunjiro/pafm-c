@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { query } from '@/lib/db';
+import { createLog, getClientInfo } from '@/lib/logger';
 
 const plotSchema = z.object({
   cemetery_id: z.number().int().positive(),
@@ -90,6 +91,18 @@ export async function POST(request: NextRequest) {
         validatedData.layers,
       ]
     );
+
+    // Log the plot creation
+    const { ipAddress, userAgent } = getClientInfo(request);
+    await createLog({
+      action: 'plot_create',
+      description: `Created plot ${validatedData.plot_number} in cemetery ${validatedData.cemetery_id}`,
+      resourceType: 'plot',
+      resourceId: result[0].id,
+      ipAddress,
+      userAgent,
+      status: 'success',
+    });
 
     return NextResponse.json(
       { plot: result[0], message: 'Plot created successfully' },

@@ -5,6 +5,7 @@ import { SignJWT } from 'jose';
 import { loginSchema } from '@/lib/validation';
 import { loginRateLimiter, getClientIp } from '@/lib/rate-limiter';
 import { queryOne, query } from '@/lib/db';
+import { createLog, getClientInfo } from '@/lib/logger';
 
 // Secret key for JWT (in production, use environment variable)
 const JWT_SECRET = new TextEncoder().encode(
@@ -83,6 +84,17 @@ export async function POST(request: NextRequest) {
         [clientIp, false]
       );
       
+      // Log failed login attempt
+      const { ipAddress, userAgent } = getClientInfo(request);
+      await createLog({
+        userEmail: email,
+        action: 'login_failed',
+        description: 'Failed login attempt - user not found',
+        ipAddress,
+        userAgent,
+        status: 'error',
+      });
+      
       return NextResponse.json(
         { error: invalidCredentialsError },
         { status: 401 }
@@ -107,6 +119,18 @@ export async function POST(request: NextRequest) {
         [clientIp, false]
       );
       
+      // Log failed login attempt
+      const { ipAddress, userAgent } = getClientInfo(request);
+      await createLog({
+        userId: user.id,
+        userEmail: user.email,
+        action: 'login_failed',
+        description: 'Failed login attempt - invalid password',
+        ipAddress,
+        userAgent,
+        status: 'error',
+      });
+      
       return NextResponse.json(
         { error: invalidCredentialsError },
         { status: 401 }
@@ -124,6 +148,18 @@ export async function POST(request: NextRequest) {
       'UPDATE users SET last_login = CURRENT_TIMESTAMP WHERE id = $1',
       [user.id]
     );
+
+    // Log successful login
+    const { ipAddress, userAgent } = getClientInfo(request);
+    await createLog({
+      userId: user.id,
+      userEmail: user.email,
+      action: 'login',
+      description: `Successful login from ${ipAddress}`,
+      ipAddress,
+      userAgent,
+      status: 'success',
+    });
 
     // Create JWT token
     const token = await new SignJWT({
