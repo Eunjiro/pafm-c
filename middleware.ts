@@ -20,8 +20,8 @@ export async function middleware(request: NextRequest) {
     'camera=(), microphone=(), geolocation=(self), interest-cohort=()'
   );
 
-  // Admin-only system - all routes except login require authentication
-  const publicPaths = ['/login', '/api/auth/login'];
+  // Admin-only system - all routes except login and public external APIs require authentication
+  const publicPaths = ['/login', '/api/auth/login', '/api/external'];
   const isPublicPath = publicPaths.some((path) =>
     request.nextUrl.pathname.startsWith(path)
   );
