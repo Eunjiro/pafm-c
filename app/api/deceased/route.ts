@@ -24,7 +24,7 @@ export async function GET(request: NextRequest) {
     const deceased = await query(
       `SELECT id, first_name, last_name, middle_name, maiden_name, date_of_birth, date_of_death, 
               age_at_death, gender, nationality, occupation, biography, photo_url, epitaph
-       FROM deceased_persons 
+       FROM deceased 
        ORDER BY last_name, first_name ASC`
     );
 
@@ -45,7 +45,7 @@ export async function POST(request: NextRequest) {
     const validatedData = deceasedSchema.parse(body);
 
     const result = await query(
-      `INSERT INTO deceased_persons (
+      `INSERT INTO deceased (
         first_name, last_name, middle_name, maiden_name, date_of_birth, date_of_death,
         age_at_death, gender, nationality, occupation, biography, photo_url, epitaph
       ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)

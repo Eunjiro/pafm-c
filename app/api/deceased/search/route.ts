@@ -30,7 +30,7 @@ export async function GET(request: NextRequest) {
         gp.map_coordinates,
         gp.cemetery_id,
         c.name as cemetery_name
-      FROM deceased_persons d
+      FROM deceased d
       INNER JOIN burials b ON d.id = b.deceased_id
       INNER JOIN grave_plots gp ON b.plot_id = gp.id
       INNER JOIN cemeteries c ON gp.cemetery_id = c.id
