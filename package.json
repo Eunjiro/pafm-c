@@ -16,6 +16,7 @@
     "db:migrate:logs": "tsx scripts/migrate-logs.ts",
     "db:migrate:permits": "tsx scripts/migrate-pending-permits.ts",
     "db:seed:api-key": "tsx scripts/seed-api-key.ts",
+    "db:register:permit-key": "tsx scripts/register-permit-api-key.ts",
     "db:clear-attempts": "tsx scripts/clear-login-attempts.ts",
     "db:check-expiration": "tsx scripts/check-fix-expiration.ts"
   },

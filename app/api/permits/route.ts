@@ -19,14 +19,12 @@ export async function GET(request: NextRequest) {
       SELECT 
         pp.*,
         c.name as preferred_cemetery_name,
-        cs.name as preferred_section_name,
         gp.plot_number as preferred_plot_number,
         assigned_gp.plot_number as assigned_plot_number,
         assigned_c.name as assigned_cemetery_name,
         u.email as assigned_by_email
       FROM pending_permits pp
       LEFT JOIN cemeteries c ON pp.preferred_cemetery_id = c.id
-      LEFT JOIN cemetery_sections cs ON pp.section_id = cs.id
       LEFT JOIN grave_plots gp ON pp.preferred_plot_id = gp.id
       LEFT JOIN grave_plots assigned_gp ON pp.assigned_plot_id = assigned_gp.id
       LEFT JOIN cemeteries assigned_c ON assigned_gp.cemetery_id = assigned_c.id
@@ -80,7 +78,7 @@ export async function GET(request: NextRequest) {
         preferences: {
           cemetery_id: p.preferred_cemetery_id,
           cemetery_name: p.preferred_cemetery_name,
-          section_name: p.preferred_section_name,
+          section: p.preferred_section,
           plot_id: p.preferred_plot_id,
           plot_number: p.preferred_plot_number,
           layer: p.preferred_layer,
