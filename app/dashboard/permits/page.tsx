@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import DashboardLayout from '@/components/DashboardLayout';
 
 interface Permit {
@@ -36,17 +37,10 @@ interface Permit {
 }
 
 export default function PermitsPage() {
+  const router = useRouter();
   const [permits, setPermits] = useState<Permit[]>([]);
   const [loading, setLoading] = useState(true);
   const [statusFilter, setStatusFilter] = useState('pending');
-  const [selectedPermit, setSelectedPermit] = useState<Permit | null>(null);
-  const [showAssignModal, setShowAssignModal] = useState(false);
-  
-  // Assignment form state
-  const [plotId, setPlotId] = useState('');
-  const [layer, setLayer] = useState('1');
-  const [adminNotes, setAdminNotes] = useState('');
-  const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
     fetchPermits();
@@ -62,38 +56,6 @@ export default function PermitsPage() {
       console.error('Error fetching permits:', error);
     } finally {
       setLoading(false);
-    }
-  }
-
-  async function handleAssign() {
-    if (!selectedPermit || !plotId) return;
-    
-    try {
-      setSubmitting(true);
-      const response = await fetch(`/api/permits/${selectedPermit.id}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          action: 'assign',
-          plot_id: parseInt(plotId),
-          layer: parseInt(layer),
-          admin_notes: adminNotes,
-        }),
-      });
-      
-      if (!response.ok) {
-        throw new Error('Failed to assign permit');
-      }
-      
-      alert('Permit assigned successfully!');
-      setShowAssignModal(false);
-      setSelectedPermit(null);
-      fetchPermits();
-    } catch (error) {
-      console.error('Error assigning permit:', error);
-      alert('Failed to assign permit');
-    } finally {
-      setSubmitting(false);
     }
   }
 
@@ -255,15 +217,11 @@ export default function PermitsPage() {
                   {permit.status === 'pending' && (
                     <div className="flex flex-col gap-2 ml-4">
                       <button
-                        onClick={() => {
-                          setSelectedPermit(permit);
-                          setPlotId(permit.preferences.plot_id?.toString() || '');
-                          setLayer(permit.preferences.layer?.toString() || '1');
-                          setShowAssignModal(true);
-                        }}
-                        className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors text-sm font-medium"
+                        onClick={() => router.push(`/dashboard/permits/${permit.id}/assign`)}
+                        className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors text-sm font-medium flex items-center gap-2"
                       >
-                        Assign Plot
+                        <span>🗺️</span>
+                        <span>Assign Plot on Map</span>
                       </button>
                       <button
                         onClick={() => handleReject(permit.id)}
@@ -279,82 +237,6 @@ export default function PermitsPage() {
           )}
         </div>
       </div>
-
-      {/* Assign Modal */}
-      {showAssignModal && selectedPermit && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-xl shadow-xl max-w-lg w-full mx-4 p-6">
-            <h2 className="text-2xl font-bold text-slate-900 mb-4">Assign Burial Plot</h2>
-            
-            <div className="mb-4">
-              <p className="text-sm text-slate-600 mb-2">
-                Assigning permit for: <span className="font-semibold">{selectedPermit.deceased.first_name} {selectedPermit.deceased.last_name}</span>
-              </p>
-            </div>
-
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-semibold text-slate-700 mb-2">
-                  Plot ID *
-                </label>
-                <input
-                  type="number"
-                  value={plotId}
-                  onChange={(e) => setPlotId(e.target.value)}
-                  className="w-full px-4 py-2 border border-purple-200 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
-                  placeholder="Enter plot ID"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-semibold text-slate-700 mb-2">
-                  Layer
-                </label>
-                <input
-                  type="number"
-                  value={layer}
-                  onChange={(e) => setLayer(e.target.value)}
-                  min="1"
-                  className="w-full px-4 py-2 border border-purple-200 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-semibold text-slate-700 mb-2">
-                  Admin Notes
-                </label>
-                <textarea
-                  value={adminNotes}
-                  onChange={(e) => setAdminNotes(e.target.value)}
-                  rows={3}
-                  className="w-full px-4 py-2 border border-purple-200 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
-                  placeholder="Optional notes..."
-                />
-              </div>
-            </div>
-
-            <div className="flex gap-3 mt-6">
-              <button
-                onClick={handleAssign}
-                disabled={!plotId || submitting}
-                className="flex-1 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-medium"
-              >
-                {submitting ? 'Assigning...' : 'Confirm Assignment'}
-              </button>
-              <button
-                onClick={() => {
-                  setShowAssignModal(false);
-                  setSelectedPermit(null);
-                }}
-                disabled={submitting}
-                className="px-4 py-2 bg-slate-200 text-slate-700 rounded-lg hover:bg-slate-300 disabled:opacity-50 transition-colors font-medium"
-              >
-                Cancel
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </DashboardLayout>
   );
 }
