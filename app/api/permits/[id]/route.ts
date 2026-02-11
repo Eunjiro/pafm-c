@@ -4,18 +4,18 @@ import { createLog, getClientInfo } from '@/lib/logger';
 import { jwtVerify } from 'jose';
 
 interface RouteContext {
-  params: {
+  params: Promise<{
     id: string;
-  };
+  }>;
 }
 
 /**
  * PUT /api/permits/[id]
  * Update permit (assign, reject,add notes)
  */
-export async function PUT(request: NextRequest, { params }: RouteContext) {
+export async function PUT(request: NextRequest, context: RouteContext) {
   try {
-    const { id } = params;
+    const { id } = await context.params;
     const body = await request.json();
     const { action, plot_id, layer, admin_notes, rejection_reason } = body;
     
