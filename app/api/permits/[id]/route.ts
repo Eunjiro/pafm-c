@@ -17,7 +17,7 @@ export async function PUT(request: NextRequest, context: RouteContext) {
   try {
     const { id } = await context.params;
     const body = await request.json();
-    const { action, plot_id, layer, admin_notes, rejection_reason } = body;
+    const { action, plot_id, layer, admin_notes, rejection_reason, deceased_id, burial_id } = body;
     
     // Get user from JWT
     const token = request.cookies.get('auth-token')?.value;
@@ -41,7 +41,46 @@ export async function PUT(request: NextRequest, context: RouteContext) {
     
     const permit = permits[0];
     
-    if (action === 'assign') {
+    if (action === 'link_burial') {
+      // Link an existing burial to this permit (used when assigning from cemetery map)
+      if (!burial_id || !deceased_id || !plot_id) {
+        return NextResponse.json({ 
+          error: 'burial_id, deceased_id, and plot_id required for link_burial action' 
+        }, { status: 400 });
+      }
+      
+      // Update permit status to link to existing burial
+      await query(
+        `UPDATE pending_permits 
+        SET status = 'assigned',
+            assigned_plot_id = $1,
+            assigned_by = $2,
+            assigned_at = CURRENT_TIMESTAMP,
+            burial_id = $3,
+            admin_notes = $4
+        WHERE id = $5`,
+        [plot_id, userId, burial_id, admin_notes || null, id]
+      );
+      
+      // Log the assignment
+      const { ipAddress, userAgent } = getClientInfo(request);
+      await createLog({
+        userId,
+        action: 'permit_linked',
+        description: `Linked permit ${permit.permit_id} to existing burial`,
+        resourceType: 'permit',
+        resourceId: parseInt(id),
+        ipAddress,
+        userAgent,
+        status: 'success',
+      });
+      
+      return NextResponse.json({
+        message: 'Permit linked to burial successfully',
+        burial_id,
+      });
+      
+    } else if (action === 'assign') {
       // Assign burial to plot
       if (!plot_id) {
         return NextResponse.json({ error: 'plot_id required' }, { status: 400 });
@@ -162,8 +201,16 @@ export async function PUT(request: NextRequest, context: RouteContext) {
     
   } catch (error) {
     console.error('Error updating permit:', error);
+    // Return detailed error for debugging
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    const errorStack = error instanceof Error ? error.stack : '';
+    console.error('Error details:', { errorMessage, errorStack });
+    
     return NextResponse.json(
-      { error: 'Failed to update permit' },
+      { 
+        error: 'Failed to update permit',
+        details: process.env.NODE_ENV === 'development' ? errorMessage : undefined
+      },
       { status: 500 }
     );
   }

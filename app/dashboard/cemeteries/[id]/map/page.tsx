@@ -35,6 +35,29 @@ interface Facility {
   longitude?: number;
 }
 
+interface PendingPermit {
+  id: number;
+  permit_id: string;
+  status: string;
+  deceased: {
+    first_name: string;
+    middle_name?: string;
+    last_name: string;
+    suffix?: string;
+    date_of_birth?: string;
+    date_of_death: string;
+    gender?: string;
+  };
+  preferences: {
+    cemetery_id?: number;
+    cemetery_name?: string;
+    section?: string;
+    plot_id?: number;
+    plot_number?: string;
+    layer?: number;
+  };
+}
+
 interface PlotMapProps {
   cemetery: Cemetery;
   plots: Plot[];
@@ -99,6 +122,9 @@ export default function CemeteryMapPage() {
   const [showOnlyVacant, setShowOnlyVacant] = useState(false);
   const [mappingMode, setMappingMode] = useState<'plots' | 'facilities'>('plots');
   const [facilities, setFacilities] = useState<Facility[]>([]);
+  const [pendingPermits, setPendingPermits] = useState<PendingPermit[]>([]);
+  const [selectedPermit, setSelectedPermit] = useState<PendingPermit | null>(null);
+  const [permitSearchQuery, setPermitSearchQuery] = useState('');
   const [showFacilityForm, setShowFacilityForm] = useState(false);
   const [selectedFacilityCoordinates, setSelectedFacilityCoordinates] = useState<[number, number][] | null>(null);
   const [selectedFacility, setSelectedFacility] = useState<Facility | null>(null);
@@ -120,6 +146,7 @@ export default function CemeteryMapPage() {
     fetchPlots();
     fetchAllBurials();
     fetchFacilities();
+    fetchPendingPermits();
   }, [cemeteryId]);
 
   const fetchCemeteryData = async () => {
@@ -174,6 +201,21 @@ export default function CemeteryMapPage() {
     } catch (error) {
       console.error('Error fetching facilities:', error);
       setFacilities([]);
+    }
+  };
+
+  const fetchPendingPermits = async () => {
+    try {
+      const response = await fetch(`/api/permits?status=pending&cemetery_id=${cemeteryId}`, {
+        credentials: 'include',
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setPendingPermits(data.permits || []);
+      }
+    } catch (error) {
+      console.error('Error fetching pending permits:', error);
+      setPendingPermits([]);
     }
   };
 
@@ -431,6 +473,13 @@ export default function CemeteryMapPage() {
             {mappingMode === 'plots' && showEditModal && selectedPlot && !showPlotForm && (
               <EditPlotModal
                 plot={selectedPlot}
+                cemetery={cemetery}
+                pendingPermits={pendingPermits}
+                selectedPermit={selectedPermit}
+                setSelectedPermit={setSelectedPermit}
+                permitSearchQuery={permitSearchQuery}
+                setPermitSearchQuery={setPermitSearchQuery}
+                fetchPendingPermits={fetchPendingPermits}
                 onClose={() => {
                   setShowEditModal(false);
                   setSelectedPlot(null);
@@ -939,10 +988,24 @@ function PlotFormSidebar({
 
 function EditPlotModal({
   plot,
+  cemetery,
+  pendingPermits,
+  selectedPermit,
+  setSelectedPermit,
+  permitSearchQuery,
+  setPermitSearchQuery,
+  fetchPendingPermits,
   onClose,
   onSuccess,
 }: {
   plot: Plot;
+  cemetery: Cemetery | null;
+  pendingPermits: PendingPermit[];
+  selectedPermit: PendingPermit | null;
+  setSelectedPermit: (permit: PendingPermit | null) => void;
+  permitSearchQuery: string;
+  setPermitSearchQuery: (query: string) => void;
+  fetchPendingPermits: () => void;
   onClose: () => void;
   onSuccess: () => void;
 }) {
@@ -1129,6 +1192,7 @@ function EditPlotModal({
           layer: parseInt(selectedLayer),
           burial_date: burialDate || undefined,
           notes: burialNotes || undefined,
+          permit_id: selectedPermit?.id || undefined,
         }),
       });
 
@@ -1136,6 +1200,31 @@ function EditPlotModal({
 
       if (!response.ok) {
         throw new Error(data.error || 'Failed to assign burial');
+      }
+
+      const burialId = data.burial.id;
+
+      // If this burial was from a permit, update the permit status to 'assigned'
+      if (selectedPermit) {
+        try {
+          await fetch(`/api/permits/${selectedPermit.id}`, {
+            method: 'PUT',
+            credentials: 'include',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              action: 'link_burial',
+              cemetery_id: cemetery?.id,
+              plot_id: plot.id,
+              deceased_id: deceasedId,
+              burial_id: burialId,
+            }),
+          });
+          // Refresh permits list
+          fetchPendingPermits();
+        } catch (permitError) {
+          console.error('Failed to update permit status:', permitError);
+          // Don't fail the whole operation if permit update fails
+        }
       }
 
       // Reset form
@@ -1149,6 +1238,8 @@ function EditPlotModal({
       setBurialDate('');
       setBurialNotes('');
       setSelectedLayer('1');
+      setSelectedPermit(null);
+      setPermitSearchQuery('');
       
       // Refresh burials
       fetchBurials();
@@ -1519,6 +1610,8 @@ function EditPlotModal({
                     setBurialDate('');
                     setBurialNotes('');
                     setError('');
+                    setSelectedPermit(null);
+                    setPermitSearchQuery('');
                   }}
                   className="text-gray-400 hover:text-gray-600"
                 >
@@ -1535,6 +1628,103 @@ function EditPlotModal({
                   <p className="text-sm text-red-800">{error}</p>
                 </div>
               )}
+
+              {/* Permit Selection Section */}
+              <div className="bg-indigo-50 border border-indigo-200 rounded-lg p-4 space-y-3">
+                <div className="flex items-center gap-2 mb-2">
+                  <svg className="w-5 h-5 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                  </svg>
+                  <h5 className="text-sm font-semibold text-indigo-900">Select from Pending Permits</h5>
+                </div>
+                
+                <div>
+                  <input
+                    type="text"
+                    placeholder="Search permit number or deceased name..."
+                    value={permitSearchQuery}
+                    onChange={(e) => setPermitSearchQuery(e.target.value)}
+                    className="w-full px-3 py-2 border border-indigo-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm"
+                  />
+                </div>
+
+                {pendingPermits.length === 0 ? (
+                  <p className="text-sm text-gray-600 italic">No pending permits for this cemetery</p>
+                ) : (
+                  <div className="max-h-48 overflow-y-auto space-y-2">
+                    {pendingPermits
+                      .filter(permit => 
+                        permitSearchQuery === '' ||
+                        permit.permit_id.toLowerCase().includes(permitSearchQuery.toLowerCase()) ||
+                        `${permit.deceased.first_name} ${permit.deceased.last_name}`.toLowerCase().includes(permitSearchQuery.toLowerCase())
+                      )
+                      .map(permit => (
+                        <button
+                          key={permit.id}
+                          type="button"
+                          onClick={() => {
+                            setSelectedPermit(permit);
+                            setDeceasedForm({
+                              firstName: permit.deceased.first_name,
+                              lastName: permit.deceased.last_name,
+                              dateOfBirth: permit.deceased.date_of_birth || '',
+                              dateOfDeath: permit.deceased.date_of_death,
+                            });
+                            setPermitSearchQuery('');
+                          }}
+                          className={`w-full text-left p-3 rounded-md border transition-all ${
+                            selectedPermit?.id === permit.id
+                              ? 'border-indigo-500 bg-indigo-100'
+                              : 'border-gray-200 bg-white hover:border-indigo-300 hover:bg-indigo-50'
+                          }`}
+                        >
+                          <div className="flex items-center justify-between">
+                            <div className="flex-1">
+                              <p className="text-sm font-medium text-gray-900">{permit.permit_id}</p>
+                              <p className="text-sm text-gray-700">
+                                {permit.deceased.first_name} {permit.deceased.middle_name || ''} {permit.deceased.last_name}
+                              </p>
+                              <p className="text-xs text-gray-500">DOD: {new Date(permit.deceased.date_of_death).toLocaleDateString()}</p>
+                            </div>
+                            {selectedPermit?.id === permit.id && (
+                              <svg className="w-5 h-5 text-indigo-600" fill="currentColor" viewBox="0 0 20 20">
+                                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                              </svg>
+                            )}
+                          </div>
+                        </button>
+                      ))}
+                  </div>
+                )}
+
+                {selectedPermit && (
+                  <div className="flex items-center gap-2 text-sm text-indigo-700 bg-indigo-100 rounded px-3 py-2">
+                    <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                    </svg>
+                    <span>Selected: {selectedPermit.permit_id}</span>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setSelectedPermit(null);
+                        setDeceasedForm({
+                          firstName: '',
+                          lastName: '',
+                          dateOfBirth: '',
+                          dateOfDeath: '',
+                        });
+                      }}
+                      className="ml-auto text-indigo-600 hover:text-indigo-800"
+                    >
+                      Clear
+                    </button>
+                  </div>
+                )}
+              </div>
+
+              <div className="border-t border-gray-200 pt-4">
+                <p className="text-sm text-gray-600 mb-3">Or enter details manually:</p>
+              </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
@@ -1630,6 +1820,8 @@ function EditPlotModal({
                     setBurialNotes('');
                     setSelectedLayer('1');
                     setError('');
+                    setSelectedPermit(null);
+                    setPermitSearchQuery('');
                   }}
                   className="flex-1 px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50"
                 >
