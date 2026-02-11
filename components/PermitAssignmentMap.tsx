@@ -26,6 +26,7 @@ interface Plot {
   plot_number: string;
   status: string;
   plot_type: string;
+  cemetery_id: number;
   map_coordinates: [number, number][];
   layers: number;
   occupied_layers: number;
