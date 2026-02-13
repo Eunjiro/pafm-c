@@ -25,7 +25,12 @@ export async function PUT(request: NextRequest, context: RouteContext) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
     
-    const secret = new TextEncoder().encode(process.env.JWT_SECRET!);
+    if (!process.env.JWT_SECRET) {
+      console.error('JWT_SECRET environment variable is not set');
+      return NextResponse.json({ error: 'Server configuration error: JWT_SECRET is not set' }, { status: 500 });
+    }
+    
+    const secret = new TextEncoder().encode(process.env.JWT_SECRET);
     const { payload } = await jwtVerify(token, secret);
     const userId = payload.userId as number;
     
