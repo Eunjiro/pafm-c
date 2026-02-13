@@ -8,6 +8,7 @@
     "start": "next start",
     "lint": "eslint",
     "db:test": "tsx scripts/test-db.ts",
+    "db:config": "tsx scripts/check-db-config.ts",
     "db:migrate": "tsx scripts/migrate.ts",
     "db:seed": "tsx scripts/seed.ts",
     "db:migrate:cemetery": "tsx scripts/migrate-cemetery.ts",
@@ -19,7 +20,12 @@
     "db:seed:api-key": "tsx scripts/seed-api-key.ts",
     "db:register:permit-key": "tsx scripts/register-permit-api-key.ts",
     "db:clear-attempts": "tsx scripts/clear-login-attempts.ts",
-    "db:check-expiration": "tsx scripts/check-fix-expiration.ts"
+    "db:check-expiration": "tsx scripts/check-fix-expiration.ts",
+    "db:check:api-keys": "tsx scripts/check-api-keys.ts",
+    "permits:check": "tsx scripts/check-permits.ts",
+    "permits:clean": "tsx scripts/clean-invalid-permits.ts",
+    "permits:test": "tsx scripts/test-permit-workflow.ts",
+    "permits:test:submit": "tsx scripts/test-permit-submission.ts"
   },
   "dependencies": {
     "@types/leaflet": "^1.9.21",

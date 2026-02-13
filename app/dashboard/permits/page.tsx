@@ -14,7 +14,9 @@ interface Permit {
     middle_name?: string;
     last_name: string;
     suffix?: string;
+    date_of_birth?: string;
     date_of_death: string;
+    gender?: string;
   };
   applicant: {
     name: string;
@@ -177,7 +179,13 @@ export default function PermitsPage() {
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
                       <div>
                         <p className="text-xs text-slate-500 font-semibold mb-1">Deceased Information</p>
+                        {permit.deceased.date_of_birth && (
+                          <p className="text-sm text-slate-700">Date of Birth: {new Date(permit.deceased.date_of_birth).toLocaleDateString()}</p>
+                        )}
                         <p className="text-sm text-slate-700">Date of Death: {new Date(permit.deceased.date_of_death).toLocaleDateString()}</p>
+                        {permit.deceased.gender && (
+                          <p className="text-sm text-slate-700">Gender: {permit.deceased.gender}</p>
+                        )}
                       </div>
 
                       <div>
