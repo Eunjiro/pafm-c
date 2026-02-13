@@ -30,7 +30,7 @@ export async function GET(
          ELSE NULL
        END as days_until_expiration
        FROM burials b
-       JOIN deceased d ON b.deceased_id = d.id
+       JOIN deceased_persons d ON b.deceased_id = d.id
        WHERE b.id = $1`,
       [id]
     );
@@ -89,7 +89,7 @@ export async function PUT(
     const burialInfo = await queryOne(
       `SELECT d.first_name, d.last_name, b.plot_id 
        FROM burials b
-       JOIN deceased d ON b.deceased_id = d.id
+       JOIN deceased_persons d ON b.deceased_id = d.id
        WHERE b.id = $1`,
       [id]
     );
@@ -138,7 +138,7 @@ export async function DELETE(
     const burialInfo = await queryOne(
       `SELECT d.first_name, d.last_name, b.plot_id 
        FROM burials b
-       JOIN deceased d ON b.deceased_id = d.id
+       JOIN deceased_persons d ON b.deceased_id = d.id
        WHERE b.id = $1`,
       [id]
     );

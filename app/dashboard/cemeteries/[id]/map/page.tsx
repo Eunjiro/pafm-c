@@ -206,7 +206,9 @@ export default function CemeteryMapPage() {
 
   const fetchPendingPermits = async () => {
     try {
-      const response = await fetch(`/api/permits?status=pending&cemetery_id=${cemeteryId}`, {
+      // Fetch all pending permits that haven't been assigned yet (not filtered by cemetery)
+      // This allows admins to assign any pending permit to any cemetery
+      const response = await fetch(`/api/permits?status=pending`, {
         credentials: 'include',
       });
       if (response.ok) {
@@ -1598,13 +1600,20 @@ function EditPlotModal({
         )}
       </div>
 
-      {/* Add Burial Modal */}
+      {/* Add Burial Modal - Split Screen Layout */}
       {showAddBurialForm && (
-        <div className="fixed inset-0 bg-transparent flex items-center justify-center z-[9999] p-4">
-          <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-            <div className="sticky top-0 bg-white border-b border-gray-200 p-4 z-10">
+        <div 
+          className="fixed inset-0 flex items-center justify-center z-[9999] p-4"
+          style={{ backgroundColor: 'rgba(0, 0, 0, 0.3)' }}
+        >
+          <div className="bg-white rounded-lg shadow-2xl max-w-6xl w-full max-h-[90vh] overflow-hidden flex flex-col">
+            {/* Header */}
+            <div className="bg-gradient-to-r from-green-600 to-emerald-600 text-white p-4">
               <div className="flex items-center justify-between">
-                <h4 className="text-lg font-bold text-gray-900">Assign Burial to Layer {selectedLayer}</h4>
+                <div>
+                  <h4 className="text-xl font-bold">Assign Burial to Layer {selectedLayer}</h4>
+                  <p className="text-sm text-green-100 mt-1">Plot {plot.plot_number} - {cemetery?.name}</p>
+                </div>
                 <button
                   onClick={() => {
                     setShowAddBurialForm(false);
@@ -1620,7 +1629,7 @@ function EditPlotModal({
                     setSelectedPermit(null);
                     setPermitSearchQuery('');
                   }}
-                  className="text-gray-400 hover:text-gray-600"
+                  className="text-white hover:text-gray-200"
                 >
                   <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -1629,218 +1638,294 @@ function EditPlotModal({
               </div>
             </div>
 
-            <div className="p-6 space-y-4">
-              {error && (
-                <div className="bg-red-50 border border-red-200 rounded-md p-3">
-                  <p className="text-sm text-red-800">{error}</p>
-                </div>
-              )}
+            {/* Split Content */}
+            <div className="flex flex-1 overflow-hidden">
+              {/* Left Side - Permit Search */}
+              <div className="w-2/5 bg-gray-50 border-r border-gray-200 overflow-y-auto p-6">
+                <div className="space-y-4">
+                  <div className="flex items-center gap-2 mb-4">
+                    <svg className="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
+                    <h5 className="text-lg font-bold text-gray-900">Pending Permits</h5>
+                  </div>
+                  
+                  {/* Search Input */}
+                  <div className="relative">
+                    <svg className="w-5 h-5 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                    </svg>
+                    <input
+                      type="text"
+                      placeholder="Search permit or name..."
+                      value={permitSearchQuery}
+                      onChange={(e) => setPermitSearchQuery(e.target.value)}
+                      className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
+                    />
+                  </div>
 
-              {/* Permit Selection Section */}
-              <div className="bg-indigo-50 border border-indigo-200 rounded-lg p-4 space-y-3">
-                <div className="flex items-center gap-2 mb-2">
-                  <svg className="w-5 h-5 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                  </svg>
-                  <h5 className="text-sm font-semibold text-indigo-900">Select from Pending Permits</h5>
-                </div>
-                
-                <div>
-                  <input
-                    type="text"
-                    placeholder="Search permit number or deceased name..."
-                    value={permitSearchQuery}
-                    onChange={(e) => setPermitSearchQuery(e.target.value)}
-                    className="w-full px-3 py-2 border border-indigo-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm"
-                  />
-                </div>
-
-                {pendingPermits.length === 0 ? (
-                  <p className="text-sm text-gray-600 italic">No pending permits for this cemetery</p>
-                ) : (
-                  <div className="max-h-48 overflow-y-auto space-y-2">
-                    {pendingPermits
-                      .filter(permit => 
-                        permitSearchQuery === '' ||
-                        permit.permit_id.toLowerCase().includes(permitSearchQuery.toLowerCase()) ||
-                        `${permit.deceased.first_name} ${permit.deceased.last_name}`.toLowerCase().includes(permitSearchQuery.toLowerCase())
-                      )
-                      .map(permit => (
+                  {/* Selected Permit Banner */}
+                  {selectedPermit && (
+                    <div className="bg-green-100 border-2 border-green-500 rounded-lg p-3">
+                      <div className="flex items-start gap-2">
+                        <svg className="w-5 h-5 text-green-600 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                          <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                        </svg>
+                        <div className="flex-1">
+                          <p className="text-sm font-bold text-green-900">Selected Permit</p>
+                          <p className="text-sm text-green-700">{selectedPermit.permit_id}</p>
+                        </div>
                         <button
-                          key={permit.id}
                           type="button"
                           onClick={() => {
-                            setSelectedPermit(permit);
+                            setSelectedPermit(null);
                             setDeceasedForm({
-                              firstName: permit.deceased.first_name,
-                              lastName: permit.deceased.last_name,
-                              dateOfBirth: permit.deceased.date_of_birth || '',
-                              dateOfDeath: permit.deceased.date_of_death,
+                              firstName: '',
+                              lastName: '',
+                              dateOfBirth: '',
+                              dateOfDeath: '',
                             });
-                            setPermitSearchQuery('');
                           }}
-                          className={`w-full text-left p-3 rounded-md border transition-all ${
-                            selectedPermit?.id === permit.id
-                              ? 'border-indigo-500 bg-indigo-100'
-                              : 'border-gray-200 bg-white hover:border-indigo-300 hover:bg-indigo-50'
-                          }`}
+                          className="text-green-600 hover:text-green-800 text-sm font-medium"
                         >
-                          <div className="flex items-center justify-between">
-                            <div className="flex-1">
-                              <p className="text-sm font-medium text-gray-900">{permit.permit_id}</p>
-                              <p className="text-sm text-gray-700">
-                                {permit.deceased.first_name} {permit.deceased.middle_name || ''} {permit.deceased.last_name}
-                              </p>
-                              <p className="text-xs text-gray-500">DOD: {new Date(permit.deceased.date_of_death).toLocaleDateString()}</p>
-                            </div>
-                            {selectedPermit?.id === permit.id && (
-                              <svg className="w-5 h-5 text-indigo-600" fill="currentColor" viewBox="0 0 20 20">
-                                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                              </svg>
-                            )}
-                          </div>
+                          Clear
                         </button>
-                      ))}
-                  </div>
-                )}
+                      </div>
+                    </div>
+                  )}
 
-                {selectedPermit && (
-                  <div className="flex items-center gap-2 text-sm text-indigo-700 bg-indigo-100 rounded px-3 py-2">
-                    <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                    </svg>
-                    <span>Selected: {selectedPermit.permit_id}</span>
+                  {/* Permits List */}
+                  <div className="space-y-2">
+                    {pendingPermits.length === 0 ? (
+                      <div className="text-center py-8">
+                        <svg className="w-12 h-12 text-gray-300 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                        </svg>
+                        <p className="text-sm text-gray-500">No pending permits</p>
+                      </div>
+                    ) : (
+                      pendingPermits
+                        .filter(permit => 
+                          permitSearchQuery === '' ||
+                          permit.permit_id.toLowerCase().includes(permitSearchQuery.toLowerCase()) ||
+                          `${permit.deceased.first_name} ${permit.deceased.last_name}`.toLowerCase().includes(permitSearchQuery.toLowerCase())
+                        )
+                        .map(permit => (
+                          <button
+                            key={permit.id}
+                            type="button"
+                            onClick={() => {
+                              setSelectedPermit(permit);
+                              // Format dates to YYYY-MM-DD for HTML date inputs
+                              const formatDate = (dateStr: string) => {
+                                if (!dateStr) return '';
+                                const date = new Date(dateStr);
+                                return date.toISOString().split('T')[0];
+                              };
+                              setDeceasedForm({
+                                firstName: permit.deceased.first_name,
+                                lastName: permit.deceased.last_name,
+                                dateOfBirth: permit.deceased.date_of_birth ? formatDate(permit.deceased.date_of_birth) : '',
+                                dateOfDeath: formatDate(permit.deceased.date_of_death),
+                              });
+                            }}
+                            className={`w-full text-left p-4 rounded-lg border-2 transition-all ${
+                              selectedPermit?.id === permit.id
+                                ? 'border-green-500 bg-green-50 shadow-md'
+                                : 'border-gray-200 bg-white hover:border-green-300 hover:shadow-sm'
+                            }`}
+                          >
+                            <div className="flex items-start justify-between gap-3">
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-center gap-2 mb-1">
+                                  <span className="inline-block px-2 py-0.5 bg-green-100 text-green-700 text-xs font-semibold rounded">
+                                    {permit.permit_id}
+                                  </span>
+                                  <span className={`inline-block px-2 py-0.5 text-xs font-medium rounded ${
+                                    permit.status === 'pending' ? 'bg-yellow-100 text-yellow-700' :
+                                    permit.status === 'approved' ? 'bg-green-100 text-green-700' :
+                                    'bg-gray-100 text-gray-700'
+                                  }`}>
+                                    {permit.status}
+                                  </span>
+                                </div>
+                                <p className="text-sm font-bold text-gray-900 truncate">
+                                  {permit.deceased.first_name} {permit.deceased.middle_name || ''} {permit.deceased.last_name}
+                                  {permit.deceased.suffix && ` ${permit.deceased.suffix}`}
+                                </p>
+                                <div className="text-xs text-gray-600 mt-1 space-y-0.5">
+                                  {permit.deceased.date_of_birth && (
+                                    <p>Born: {new Date(permit.deceased.date_of_birth).toLocaleDateString()}</p>
+                                  )}
+                                  <p>Died: {new Date(permit.deceased.date_of_death).toLocaleDateString()}</p>
+                                  {permit.deceased.gender && (
+                                    <p className="capitalize">Gender: {permit.deceased.gender}</p>
+                                  )}
+                                </div>
+                              </div>
+                              {selectedPermit?.id === permit.id && (
+                                <svg className="w-6 h-6 text-green-600 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                                </svg>
+                              )}
+                            </div>
+                          </button>
+                        ))
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* Right Side - Form */}
+              <div className="flex-1 overflow-y-auto p-6">
+                <div className="space-y-5">
+                  {error && (
+                    <div className="bg-red-50 border-l-4 border-red-500 rounded-r-lg p-4">
+                      <div className="flex items-center gap-2">
+                        <svg className="w-5 h-5 text-red-500" fill="currentColor" viewBox="0 0 20 20">
+                          <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                        </svg>
+                        <p className="text-sm font-medium text-red-800">{error}</p>
+                      </div>
+                    </div>
+                  )}
+
+                  <div>
+                    <h5 className="text-lg font-bold text-gray-900 mb-4">Deceased Information</h5>
+                    {selectedPermit && (
+                      <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg flex items-center gap-2">
+                        <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        <p className="text-sm text-blue-700">Form auto-filled from selected permit</p>
+                      </div>
+                    )}
+
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-sm font-semibold text-gray-700 mb-2">
+                          First Name <span className="text-red-500">*</span>
+                        </label>
+                        <input
+                          type="text"
+                          required
+                          value={deceasedForm.firstName}
+                          onChange={(e) => setDeceasedForm({ ...deceasedForm, firstName: e.target.value })}
+                          className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                          placeholder="First name"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-semibold text-gray-700 mb-2">
+                          Last Name <span className="text-red-500">*</span>
+                        </label>
+                        <input
+                          type="text"
+                          required
+                          value={deceasedForm.lastName}
+                          onChange={(e) => setDeceasedForm({ ...deceasedForm, lastName: e.target.value })}
+                          className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                          placeholder="Last name"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4 mt-4">
+                      <div>
+                        <label className="block text-sm font-semibold text-gray-700 mb-2">
+                          Date of Birth
+                        </label>
+                        <input
+                          type="date"
+                          value={deceasedForm.dateOfBirth}
+                          onChange={(e) => setDeceasedForm({ ...deceasedForm, dateOfBirth: e.target.value })}
+                          className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-semibold text-gray-700 mb-2">
+                          Date of Death <span className="text-red-500">*</span>
+                        </label>
+                        <input
+                          type="date"
+                          required
+                          value={deceasedForm.dateOfDeath}
+                          onChange={(e) => setDeceasedForm({ ...deceasedForm, dateOfDeath: e.target.value })}
+                          className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="border-t border-gray-200 pt-5">
+                    <h5 className="text-lg font-bold text-gray-900 mb-4">Burial Details</h5>
+                    
+                    <div>
+                      <label className="block text-sm font-semibold text-gray-700 mb-2">
+                        Burial Date
+                      </label>
+                      <input
+                        type="date"
+                        value={burialDate}
+                        onChange={(e) => setBurialDate(e.target.value)}
+                        className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                      />
+                      <p className="text-xs text-gray-500 mt-1">Leave blank if not yet scheduled</p>
+                    </div>
+
+                    <div className="mt-4">
+                      <label className="block text-sm font-semibold text-gray-700 mb-2">
+                        Additional Notes
+                      </label>
+                      <textarea
+                        value={burialNotes}
+                        onChange={(e) => setBurialNotes(e.target.value)}
+                        rows={4}
+                        className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                        placeholder="Add any special instructions or additional information..."
+                      />
+                    </div>
+                  </div>
+
+                  {/* Action Buttons */}
+                  <div className="flex gap-3 pt-6 border-t border-gray-200">
                     <button
-                      type="button"
                       onClick={() => {
-                        setSelectedPermit(null);
+                        setShowAddBurialForm(false);
                         setDeceasedForm({
                           firstName: '',
                           lastName: '',
                           dateOfBirth: '',
                           dateOfDeath: '',
                         });
+                        setBurialDate('');
+                        setBurialNotes('');
+                        setSelectedLayer('1');
+                        setError('');
+                        setSelectedPermit(null);
+                        setPermitSearchQuery('');
                       }}
-                      className="ml-auto text-indigo-600 hover:text-indigo-800"
+                      className="flex-1 px-6 py-3 border-2 border-gray-300 rounded-lg text-gray-700 font-medium hover:bg-gray-50 transition-colors"
                     >
-                      Clear
+                      Cancel
+                    </button>
+                    <button
+                      onClick={handleAssignBurial}
+                      disabled={isSubmitting}
+                      className="flex-1 px-6 py-3 bg-gradient-to-r from-green-600 to-emerald-600 text-white font-medium rounded-lg hover:from-green-700 hover:to-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-lg"
+                    >
+                      {isSubmitting ? (
+                        <span className="flex items-center justify-center gap-2">
+                          <svg className="animate-spin h-5 w-5" fill="none" viewBox="0 0 24 24">
+                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                          </svg>
+                          Assigning...
+                        </span>
+                      ) : 'Assign Burial'}
                     </button>
                   </div>
-                )}
-              </div>
-
-              <div className="border-t border-gray-200 pt-4">
-                <p className="text-sm text-gray-600 mb-3">Or enter details manually:</p>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    First Name *
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    value={deceasedForm.firstName}
-                    onChange={(e) => setDeceasedForm({ ...deceasedForm, firstName: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                    placeholder="First name"
-                  />
                 </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Last Name *
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    value={deceasedForm.lastName}
-                    onChange={(e) => setDeceasedForm({ ...deceasedForm, lastName: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                    placeholder="Last name"
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Date of Birth
-                  </label>
-                  <input
-                    type="date"
-                    value={deceasedForm.dateOfBirth}
-                    onChange={(e) => setDeceasedForm({ ...deceasedForm, dateOfBirth: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Date of Death *
-                  </label>
-                  <input
-                    type="date"
-                    required
-                    value={deceasedForm.dateOfDeath}
-                    onChange={(e) => setDeceasedForm({ ...deceasedForm, dateOfDeath: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Burial Date
-                </label>
-                <input
-                  type="date"
-                  value={burialDate}
-                  onChange={(e) => setBurialDate(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Notes
-                </label>
-                <textarea
-                  value={burialNotes}
-                  onChange={(e) => setBurialNotes(e.target.value)}
-                  rows={3}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                  placeholder="Additional notes..."
-                />
-              </div>
-
-              <div className="flex gap-3 pt-4">
-                <button
-                  onClick={() => {
-                    setShowAddBurialForm(false);
-                    setDeceasedForm({
-                      firstName: '',
-                      lastName: '',
-                      dateOfBirth: '',
-                      dateOfDeath: '',
-                    });
-                    setBurialDate('');
-                    setBurialNotes('');
-                    setSelectedLayer('1');
-                    setError('');
-                    setSelectedPermit(null);
-                    setPermitSearchQuery('');
-                  }}
-                  className="flex-1 px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={handleAssignBurial}
-                  disabled={isSubmitting}
-                  className="flex-1 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50"
-                >
-                  {isSubmitting ? 'Assigning...' : 'Assign Burial'}
-                </button>
               </div>
             </div>
           </div>

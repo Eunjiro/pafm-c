@@ -111,7 +111,7 @@ export async function PUT(request: NextRequest, context: RouteContext) {
       
       // Create deceased person if not exists
       const deceasedResult = await query(
-        `INSERT INTO deceased (
+        `INSERT INTO deceased_persons (
           first_name, middle_name, last_name, suffix,
           date_of_birth, date_of_death, gender
         ) VALUES ($1, $2, $3, $4, $5, $6, $7)

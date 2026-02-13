@@ -49,7 +49,7 @@ export async function GET(request: NextRequest) {
            ELSE NULL
          END as days_until_expiration
          FROM burials b
-         JOIN deceased d ON b.deceased_id = d.id
+         JOIN deceased_persons d ON b.deceased_id = d.id
          WHERE b.plot_id = $1
          ORDER BY b.burial_date DESC`,
         [plotId]
@@ -68,7 +68,7 @@ export async function GET(request: NextRequest) {
            ELSE NULL
          END as days_until_expiration
          FROM burials b
-         JOIN deceased d ON b.deceased_id = d.id
+         JOIN deceased_persons d ON b.deceased_id = d.id
          JOIN grave_plots gp ON b.plot_id = gp.id
          WHERE gp.cemetery_id = $1
          ORDER BY b.plot_id, b.burial_date DESC`,
@@ -112,7 +112,7 @@ export async function POST(request: NextRequest) {
 
     // Get deceased person info for logging
     const deceasedInfo = await query(
-      'SELECT first_name, last_name FROM deceased WHERE id = $1',
+      'SELECT first_name, last_name FROM deceased_persons WHERE id = $1',
       [validatedData.deceased_id]
     );
     const deceasedName = deceasedInfo.length > 0 

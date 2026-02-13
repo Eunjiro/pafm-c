@@ -94,7 +94,7 @@ export async function GET(request: NextRequest) {
          gp.plot_number, gp.cemetery_id,
          EXTRACT(DAY FROM (b.expiration_date::timestamp - CURRENT_DATE::timestamp)) as days_until_expiration
          FROM burials b
-         JOIN deceased d ON b.deceased_id = d.id
+         JOIN deceased_persons d ON b.deceased_id = d.id
          JOIN grave_plots gp ON b.plot_id = gp.id
          WHERE b.expiration_date IS NOT NULL 
          AND b.expiration_date BETWEEN CURRENT_DATE AND CURRENT_DATE + INTERVAL '90 days'
@@ -109,7 +109,7 @@ export async function GET(request: NextRequest) {
         `SELECT b.*, d.first_name, d.last_name, d.date_of_birth, d.date_of_death,
          gp.plot_number, gp.cemetery_id
          FROM burials b
-         JOIN deceased d ON b.deceased_id = d.id
+         JOIN deceased_persons d ON b.deceased_id = d.id
          JOIN grave_plots gp ON b.plot_id = gp.id
          WHERE b.is_expired = TRUE
          ${cemeteryId ? 'AND gp.cemetery_id = $1' : ''}
