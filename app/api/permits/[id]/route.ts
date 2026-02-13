@@ -99,6 +99,8 @@ export async function PUT(request: NextRequest, context: RouteContext) {
         return NextResponse.json({ error: 'plot_id required' }, { status: 400 });
       }
       
+      console.log('📋 Assign action - plot_id:', plot_id, 'layer:', layer, 'permit_id:', id);
+      
       // Check plot availability
       const plots = await query(
         'SELECT * FROM grave_plots WHERE id = $1',
@@ -106,8 +108,31 @@ export async function PUT(request: NextRequest, context: RouteContext) {
       );
       
       if (plots.length === 0) {
+        console.error('Plot not found:', plot_id);
         return NextResponse.json({ error: 'Plot not found' }, { status: 404 });
       }
+      
+      console.log('📍 Found plot:', plots[0].plot_number);
+      
+      // Check if permit has required fields
+      if (!permit.deceased_first_name) {
+        console.error('Missing deceased_first_name in permit:', permit);
+        return NextResponse.json({ error: 'Permit is missing deceased first name' }, { status: 400 });
+      }
+      if (!permit.deceased_last_name) {
+        console.error('Missing deceased_last_name in permit:', permit);
+        return NextResponse.json({ error: 'Permit is missing deceased last name' }, { status: 400 });
+      }
+      if (!permit.date_of_death) {
+        console.error('Missing date_of_death in permit:', permit);
+        return NextResponse.json({ error: 'Permit is missing date of death' }, { status: 400 });
+      }
+      
+      console.log('👤 Creating deceased person:', {
+        first_name: permit.deceased_first_name,
+        last_name: permit.deceased_last_name,
+        date_of_death: permit.date_of_death
+      });
       
       // Create deceased person if not exists
       const deceasedResult = await query(
@@ -128,6 +153,7 @@ export async function PUT(request: NextRequest, context: RouteContext) {
       );
       
       const deceasedId = deceasedResult[0].id;
+      console.log('✅ Created deceased person with ID:', deceasedId);
       
       // Create burial
       const burialResult = await query(
@@ -139,6 +165,7 @@ export async function PUT(request: NextRequest, context: RouteContext) {
       );
       
       const burialId = burialResult[0].id;
+      console.log('⚰️ Created burial with ID:', burialId);
       
       // Update permit status
       await query(
@@ -152,6 +179,8 @@ export async function PUT(request: NextRequest, context: RouteContext) {
         WHERE id = $5`,
         [plot_id, userId, burialId, admin_notes || null, id]
       );
+      
+      console.log('✅ Updated permit status to assigned');
       
       // Log the assignment
       const { ipAddress, userAgent } = getClientInfo(request);

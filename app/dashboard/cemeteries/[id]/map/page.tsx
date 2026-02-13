@@ -489,6 +489,7 @@ export default function CemeteryMapPage() {
                 onSuccess={() => {
                   fetchPlots();
                   fetchAllBurials();
+                  fetchPendingPermits();
                   setShowEditModal(false);
                   setSelectedPlot(null);
                 }}

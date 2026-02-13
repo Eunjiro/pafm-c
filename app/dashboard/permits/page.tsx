@@ -228,7 +228,6 @@ export default function PermitsPage() {
                         onClick={() => router.push(`/dashboard/permits/${permit.id}/assign`)}
                         className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors text-sm font-medium flex items-center gap-2"
                       >
-                        <span>🗺️</span>
                         <span>Assign Plot on Map</span>
                       </button>
                       <button

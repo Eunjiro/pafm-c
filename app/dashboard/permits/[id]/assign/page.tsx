@@ -72,6 +72,8 @@ export default function AssignPermitPage() {
   const [selectedPlot, setSelectedPlot] = useState<Plot | null>(null);
   const [selectedLayer, setSelectedLayer] = useState<number>(1);
   const [adminNotes, setAdminNotes] = useState('');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchResults, setSearchResults] = useState<Plot[]>([]);
 
   useEffect(() => {
     fetchPermit();
@@ -137,29 +139,68 @@ export default function AssignPermitPage() {
 
     try {
       setSubmitting(true);
+      
+      const payload = {
+        action: 'assign',
+        plot_id: selectedPlot.id,
+        layer: selectedLayer,
+        admin_notes: adminNotes,
+      };
+      
+      console.log('Sending assignment request:', payload);
+      
       const response = await fetch(`/api/permits/${permit.id}`, {
         method: 'PUT',
+        credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          action: 'assign',
-          plot_id: selectedPlot.id,
-          layer: selectedLayer,
-          admin_notes: adminNotes,
-        }),
+        body: JSON.stringify(payload),
       });
 
+      let data;
+      const contentType = response.headers.get('content-type');
+      
+      if (contentType && contentType.includes('application/json')) {
+        data = await response.json();
+      } else {
+        const text = await response.text();
+        console.error('Non-JSON response:', text);
+        throw new Error('Server returned non-JSON response: ' + text.substring(0, 100));
+      }
+
+      console.log('Response status:', response.status, 'Data:', data);
+
       if (!response.ok) {
-        throw new Error('Failed to assign permit');
+        const errorMsg = data.error || data.message || data.detail || 'Failed to assign permit';
+        console.error('API Error Response:', { status: response.status, data });
+        throw new Error(errorMsg);
       }
 
       alert('✅ Permit assigned successfully!');
       router.push('/dashboard/permits');
-    } catch (error) {
-      console.error('Error assigning permit:', error);
-      alert('❌ Failed to assign permit');
+    } catch (error: any) {
+      console.error('Full error object:', error);
+      alert(`❌ Failed to assign permit: ${error.message}`);
     } finally {
       setSubmitting(false);
     }
+  }
+
+  function handleSearch(query: string) {
+    setSearchQuery(query);
+    if (query.trim()) {
+      const filtered = plots.filter(plot => 
+        plot.plot_number.toLowerCase().includes(query.toLowerCase())
+      );
+      setSearchResults(filtered);
+    } else {
+      setSearchResults([]);
+    }
+  }
+
+  function handleSelectSearchResult(plot: Plot) {
+    setSelectedPlot(plot);
+    setSearchQuery('');
+    setSearchResults([]);
   }
 
   const availablePlots = plots.filter(p => {
@@ -279,7 +320,7 @@ export default function AssignPermitPage() {
         {selectedCemetery && (
           <div className="bg-white rounded-xl shadow-sm border border-purple-100 p-6">
             <div className="flex items-center justify-between mb-4">
-              <div>
+              <div className="flex-1">
                 <h3 className="text-lg font-bold text-slate-800">Cemetery Map</h3>
                 <p className="text-sm text-slate-600">
                   Click on an available plot (green) to assign
@@ -293,6 +334,60 @@ export default function AssignPermitPage() {
                 <div className="text-right">
                   <p className="text-sm font-semibold text-slate-700">Selected Plot:</p>
                   <p className="text-2xl font-bold text-purple-600">{selectedPlot.plot_number}</p>
+                </div>
+              )}
+            </div>
+
+            {/* Plot Search */}
+            <div className="mb-4 relative">
+              <div className="relative">
+                <svg className="w-5 h-5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                </svg>
+                <input
+                  type="text"
+                  placeholder="Search plot by number..."
+                  value={searchQuery}
+                  onChange={(e) => handleSearch(e.target.value)}
+                  className="w-full pl-10 pr-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+                />
+              </div>
+              
+              {/* Search Results Dropdown */}
+              {searchResults.length > 0 && (
+                <div className="absolute z-[1001] mt-1 w-full bg-white border border-slate-300 rounded-lg shadow-lg max-h-60 overflow-y-auto">
+                  {searchResults.map(plot => {
+                    const isClickable = plot.status === 'available' || (plot.status === 'occupied' && plot.occupied_layers < plot.layers);
+                    return (
+                      <button
+                        key={plot.id}
+                        onClick={() => isClickable && handleSelectSearchResult(plot)}
+                        disabled={!isClickable}
+                        className={`w-full text-left px-4 py-3 hover:bg-slate-50 border-b border-slate-100 last:border-b-0 ${
+                          isClickable ? 'cursor-pointer' : 'opacity-50 cursor-not-allowed'
+                        }`}
+                      >
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <p className="font-semibold text-slate-800">{plot.plot_number}</p>
+                            <p className="text-xs text-slate-600 capitalize">{plot.status}</p>
+                          </div>
+                          <div className="text-right">
+                            {plot.layers > 1 && (
+                              <p className="text-xs text-slate-600">
+                                {plot.occupied_layers || 0} / {plot.layers} layers
+                              </p>
+                            )}
+                            {isClickable ? (
+                              <span className="text-xs text-green-600 font-semibold">Available</span>
+                            ) : (
+                              <span className="text-xs text-red-600 font-semibold">Full</span>
+                            )}
+                          </div>
+                        </div>
+                      </button>
+                    );
+                  })}
                 </div>
               )}
             </div>

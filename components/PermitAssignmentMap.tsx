@@ -43,7 +43,7 @@ function MapUpdater({ center }: { center: [number, number] }) {
   const map = useMap();
   
   useEffect(() => {
-    map.setView(center, 18);
+    map.setView(center, 19);
   }, [center, map]);
   
   return null;
@@ -130,15 +130,19 @@ export default function PermitAssignmentMap({
       <div className="w-full h-[600px] rounded-xl overflow-hidden border border-slate-200 shadow-sm">
         <MapContainer
           center={[centerLat, centerLng]}
-          zoom={18}
+          zoom={19}
+          maxZoom={22}
+          minZoom={15}
           style={{ height: '100%', width: '100%' }}
           scrollWheelZoom={true}
+          zoomControl={true}
         >
           <MapUpdater center={[centerLat, centerLng]} />
           
           <TileLayer
             attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
             url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+            maxZoom={22}
           />
 
           {/* Cemetery Boundary */}
