@@ -1207,7 +1207,7 @@ function EditPlotModal({
       // If this burial was from a permit, update the permit status to 'assigned'
       if (selectedPermit) {
         try {
-          await fetch(`/api/permits/${selectedPermit.id}`, {
+          const permitResponse = await fetch(`/api/permits/${selectedPermit.id}`, {
             method: 'PUT',
             credentials: 'include',
             headers: { 'Content-Type': 'application/json' },
@@ -1219,11 +1219,18 @@ function EditPlotModal({
               burial_id: burialId,
             }),
           });
+          
+          if (!permitResponse.ok) {
+            const permitError = await permitResponse.json();
+            console.error('Permit update failed:', permitError);
+            throw new Error(permitError.message || permitError.error || 'Failed to assign permit');
+          }
+          
           // Refresh permits list
           fetchPendingPermits();
-        } catch (permitError) {
+        } catch (permitError: any) {
           console.error('Failed to update permit status:', permitError);
-          // Don't fail the whole operation if permit update fails
+          throw new Error(`Burial assigned but permit update failed: ${permitError.message}`);
         }
       }
 

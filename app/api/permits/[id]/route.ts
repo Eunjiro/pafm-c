@@ -49,6 +49,19 @@ export async function PUT(request: NextRequest, context: RouteContext) {
         }, { status: 400 });
       }
       
+      // Convert IDs to integers to ensure proper types
+      const plotIdInt = typeof plot_id === 'string' ? parseInt(plot_id) : plot_id;
+      const burialIdInt = typeof burial_id === 'string' ? parseInt(burial_id) : burial_id;
+      const permitIdInt = parseInt(id);
+      
+      console.log('🔍 Link burial - Data types:', {
+        plot_id: plotIdInt,
+        burial_id: burialIdInt,
+        permit_id: permitIdInt,
+        userId,
+        admin_notes: admin_notes || null
+      });
+      
       // Update permit status to link to existing burial
       await query(
         `UPDATE pending_permits 
@@ -59,7 +72,7 @@ export async function PUT(request: NextRequest, context: RouteContext) {
             burial_id = $3,
             admin_notes = $4
         WHERE id = $5`,
-        [plot_id, userId, burial_id, admin_notes || null, id]
+        [plotIdInt, userId, burialIdInt, admin_notes || null, permitIdInt]
       );
       
       // Log the assignment
@@ -200,15 +213,26 @@ export async function PUT(request: NextRequest, context: RouteContext) {
     }
     
   } catch (error) {
-    console.error('Error updating permit:', error);
+    console.error('❌ Error updating permit:', error);
     // Return detailed error for debugging
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     const errorStack = error instanceof Error ? error.stack : '';
-    console.error('Error details:', { errorMessage, errorStack });
+    const errorCode = (error as any)?.code;
+    const errorDetail = (error as any)?.detail;
+    
+    console.error('Error details:', { 
+      errorMessage, 
+      errorCode,
+      errorDetail,
+      errorStack 
+    });
     
     return NextResponse.json(
       { 
         error: 'Failed to update permit',
+        message: errorMessage,
+        code: errorCode,
+        detail: errorDetail,
         details: process.env.NODE_ENV === 'development' ? errorMessage : undefined
       },
       { status: 500 }
