@@ -60,6 +60,7 @@ CREATE TABLE IF NOT EXISTS deceased_persons (
     first_name VARCHAR(100) NOT NULL,
     middle_name VARCHAR(100),
     last_name VARCHAR(100) NOT NULL,
+    suffix VARCHAR(20),
     maiden_name VARCHAR(100),
     date_of_birth DATE,
     date_of_death DATE,
