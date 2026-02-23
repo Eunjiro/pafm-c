@@ -100,6 +100,7 @@ const PlotMap = dynamic<PlotMapProps>(
 );
 
 export default function CemeteryMapPage() {
+    const [showFilterDropdown, setShowFilterDropdown] = useState(false);
   const params = useParams();
   const router = useRouter();
   const cemeteryId = params.id as string;
@@ -458,7 +459,7 @@ export default function CemeteryMapPage() {
         {/* Map and Sidebar Container */}
         <div className="flex gap-4">
           {/* Left Sidebar for Forms */}
-          <div className="flex-shrink-0 w-96">
+          <div className="flex-shrink-0 w-72">
             {/* Plot Mode Sidebars */}
             {mappingMode === 'plots' && showPlotForm && selectedCoordinates && (
               <PlotFormSidebar
@@ -498,40 +499,146 @@ export default function CemeteryMapPage() {
             
             {mappingMode === 'plots' && !showPlotForm && !showEditModal && (
               <div className="bg-white rounded-lg shadow p-6">
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">Grave Plots</h3>
-
-                {/* Filter Controls */}
-                <div className="mb-4">
-                  <h4 className="text-sm font-semibold text-gray-900 mb-3">Filter Plots</h4>
-                  <button
-                    onClick={() => setShowOnlyVacant(!showOnlyVacant)}
-                    className={`w-full px-4 py-3 text-sm font-medium rounded-lg transition-all text-left flex items-center justify-between ${
-                      showOnlyVacant
-                        ? 'bg-green-600 text-white shadow-md'
-                        : 'bg-gray-50 text-gray-700 border border-gray-200 hover:bg-gray-100'
-                    }`}
-                  >
-                    <div className="flex items-center gap-2">
-                      <div className={`w-5 h-5 rounded border-2 flex items-center justify-center ${
-                        showOnlyVacant ? 'bg-white border-white' : 'border-gray-300'
-                      }`}>
-                        {showOnlyVacant && (
-                          <svg className="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
-                          </svg>
-                        )}
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-lg font-semibold text-gray-900">Grave Plots</h3>
+                  <div className="relative">
+                    <button
+                      onClick={() => setShowFilterDropdown((prev) => !prev)}
+                      className="p-2 rounded-lg border border-gray-200 hover:bg-gray-100 transition-colors"
+                      title="Filter plots"
+                    >
+                      <svg className="w-5 h-5 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2a1 1 0 01-.293.707l-6.414 6.414A1 1 0 0013 13v5a1 1 0 01-2 0v-5a1 1 0 00-.293-.707L4.293 6.707A1 1 0 014 6V4z" />
+                      </svg>
+                    </button>
+                    {showFilterDropdown && (
+                      <div className="absolute right-0 mt-2 w-56 bg-white border border-gray-200 rounded-lg shadow-lg z-10">
+                        <div className="p-4">
+                          <h4 className="text-sm font-semibold text-gray-900 mb-2">Filter Plots</h4>
+                          <button
+                            onClick={() => {
+                              setShowOnlyVacant((prev) => !prev);
+                              setShowFilterDropdown(false);
+                            }}
+                            className={`w-full px-4 py-2 text-sm font-medium rounded-lg transition-all text-left flex items-center gap-2 ${showOnlyVacant ? 'bg-green-600 text-white' : 'bg-gray-50 text-gray-700 border border-gray-200 hover:bg-gray-100'}`}
+                          >
+                            <span className="inline-block">
+                              {showOnlyVacant ? (
+                                <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                                </svg>
+                              ) : (
+                                <svg className="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2" fill="none" />
+                                </svg>
+                              )}
+                            </span>
+                            <span>Highlight Vacant Plots</span>
+                            <span className="text-xs px-2 py-1 rounded-full bg-green-100 text-green-700">
+                              {plots.filter(p => {
+                                const occupied = allBurials.filter(b => b.plot_id === p.id).length;
+                                return occupied < (p.layers || 1);
+                              }).length}
+                            </span>
+                          </button>
+                          {/* Add more filter options here if needed */}
+                        </div>
                       </div>
-                      <span>Highlight Vacant Plots</span>
+                    )}
+                  </div>
+                </div>
+
+                {/* Search Bar */}
+                <div className="mb-4">
+                  <div className="relative">
+                    <input
+                      type="text"
+                      value={searchQuery}
+                      onChange={(e) => handleSearch(e.target.value)}
+                      placeholder="Search plots..."
+                      className="w-full px-3 py-2 pr-9 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 bg-white"
+                    />
+                    <svg
+                      className="absolute right-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                    </svg>
+                  </div>
+                  {/* Search Results */}
+                  {showSearchResults && searchQuery.trim() && (
+                    <div className="mt-2 border border-gray-300 rounded-lg bg-white max-h-64 overflow-y-auto">
+                      {searchResults.length > 0 || facilitySearchResults.length > 0 ? (
+                        <div className="p-2">
+                          {/* Plot Results */}
+                          {searchResults.length > 0 && (
+                            <div className="mb-2">
+                              <p className="text-xs text-gray-500 px-2 py-1 font-medium">Plots ({searchResults.length})</p>
+                              {searchResults.map((plot) => {
+                                const occupied = allBurials.filter(b => b.plot_id === plot.id).length;
+                                const capacity = plot.layers || 1;
+                                const isAvailable = occupied < capacity;
+                                return (
+                                  <button
+                                    key={`search-plot-${plot.id}`}
+                                    onClick={() => handleSelectPlot(plot)}
+                                    className="w-full text-left px-2 py-2 hover:bg-gray-50 rounded-lg transition-colors"
+                                  >
+                                    <div className="flex items-center justify-between">
+                                      <div>
+                                        <p className="font-semibold text-gray-900 text-xs">Plot {plot.plot_number}</p>
+                                        <p className="text-xs text-gray-600">
+                                          {plot.plot_type} • {occupied}/{capacity} layers
+                                        </p>
+                                      </div>
+                                      <span className={`text-xs px-2 py-0.5 rounded-full ${
+                                        isAvailable 
+                                          ? 'bg-green-100 text-green-700' 
+                                          : 'bg-red-100 text-red-700'
+                                      }`}>
+                                        {isAvailable ? 'Available' : 'Full'}
+                                      </span>
+                                    </div>
+                                  </button>
+                                );
+                              })}
+                            </div>
+                          )}
+                          {/* Facility Results */}
+                          {facilitySearchResults.length > 0 && (
+                            <div>
+                              <p className="text-xs text-gray-500 px-2 py-1 font-medium">Facilities ({facilitySearchResults.length})</p>
+                              {facilitySearchResults.map((facility) => (
+                                <button
+                                  key={`search-facility-${facility.id}`}
+                                  onClick={() => handleSelectFacility(facility)}
+                                  className="w-full text-left px-2 py-2 hover:bg-gray-50 rounded-lg transition-colors"
+                                >
+                                  <div className="flex items-center gap-2">
+                                    <span className="text-lg">
+                                      {facility.facility_type === 'office' && '🏢'}
+                                      {facility.facility_type === 'chapel' && '⛪'}
+                                      {facility.facility_type === 'restroom' && '🚻'}
+                                      {facility.facility_type === 'parking' && '🅿️'}
+                                      {!['office', 'chapel', 'restroom', 'parking'].includes(facility.facility_type) && '📍'}
+                                    </span>
+                                    <div className="flex-1">
+                                      <p className="font-semibold text-gray-900 text-xs">{facility.name}</p>
+                                      <p className="text-xs text-gray-600 capitalize">{facility.facility_type}</p>
+                                    </div>
+                                  </div>
+                                </button>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      ) : (
+                        <p className="text-xs text-gray-500 text-center py-3">No results found</p>
+                      )}
                     </div>
-                    <span className={`text-xs px-2 py-1 rounded-full ${
-                      showOnlyVacant ? 'bg-green-700' : 'bg-gray-200 text-gray-700'
-                    }`}>
-                      {plots.filter(p => {
-                        const occupied = allBurials.filter(b => b.plot_id === p.id).length;
-                        return occupied < (p.layers || 1);
-                      }).length}
-                    </span>
-                  </button>
+                  )}
                 </div>
 
                 {/* Plot List */}

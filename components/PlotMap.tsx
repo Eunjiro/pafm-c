@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState, useRef } from 'react';
-import { MapContainer, TileLayer, Polygon, Rectangle, Tooltip, FeatureGroup } from 'react-leaflet';
+import { MapContainer, TileLayer, Polygon, Rectangle, Tooltip, FeatureGroup, ZoomControl } from 'react-leaflet';
 import { EditControl } from 'react-leaflet-draw';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
@@ -104,6 +104,7 @@ export default function PlotMap({
 }: PlotMapProps) {
   const [isMounted, setIsMounted] = useState(false);
   const [map, setMap] = useState<L.Map | null>(null);
+  const mapRef = useRef<L.Map | null>(null);
   const measurementLayersRef = useRef<L.Layer[]>([]);
   const [templatePreview, setTemplatePreview] = useState<L.Polygon | null>(null);
   const [templateRotationLocal, setTemplateRotationLocal] = useState(0);
@@ -535,6 +536,8 @@ export default function PlotMap({
 
   return (
     <div className="h-[calc(100vh-200px)] sm:h-[calc(100vh-180px)] w-full rounded-lg overflow-hidden border border-gray-300 relative">
+      {/* Remove custom CSS, restore default Leaflet positioning */}
+      
       {/* Map Layer Selector - Top Right */}
       <div className="absolute top-2 right-2 z-[1000] flex gap-1 bg-white rounded-lg shadow-md border border-gray-200 p-1">
         <button
@@ -563,166 +566,20 @@ export default function PlotMap({
 
       {/* Top Control Bar - Responsive */}
       <div className="absolute top-2 left-2 right-32 z-[1000] flex flex-col sm:flex-row gap-2">
-        {/* Search Bar */}
-        {onSearchChange && (
-          <div className="flex-1 max-w-xs">
-            <div className="relative">
-              <input
-                type="text"
-                value={searchQuery}
-                onChange={(e) => onSearchChange(e.target.value)}
-                placeholder="Search plots..."
-                className="w-full px-3 py-2 pr-9 text-sm border border-gray-300 rounded-lg shadow-md focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white"
-              />
-              <svg
-                className="absolute right-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-              </svg>
-            </div>
-
-            {/* Search Results Dropdown */}
-            {showSearchResults && ((searchResults && searchResults.length > 0) || (facilitySearchResults && facilitySearchResults.length > 0)) && (
-              <>
-                <div 
-                  className="fixed inset-0 z-[999]" 
-                  onClick={onCloseSearch}
-                />
-                <div className="absolute z-[1001] w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-xl max-h-80 overflow-y-auto">
-                  <div className="p-1.5">
-                    {/* Plot Results */}
-                    {searchResults && searchResults.length > 0 && (
-                      <div className="mb-2">
-                        <p className="text-xs text-gray-500 px-2.5 py-1.5 font-medium">Plots ({searchResults.length})</p>
-                        {searchResults.map((plot) => (
-                          <button
-                            key={`plot-${plot.id}`}
-                            onClick={() => onSearchResultClick && onSearchResultClick(plot)}
-                            className="w-full text-left px-2.5 py-2 hover:bg-gray-50 rounded-lg transition-colors"
-                          >
-                            <div className="flex items-center justify-between">
-                              <div>
-                                <p className="font-semibold text-gray-900 text-xs">{plot.plot_number}</p>
-                                <p className="text-[10px] text-gray-600">
-                                  {plot.plot_type} • {plot.layers || 1} layer(s)
-                                </p>
-                              </div>
-                              <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium ${
-                                plot.status === 'available' ? 'bg-green-100 text-green-800' :
-                                plot.status === 'occupied' ? 'bg-blue-100 text-blue-800' :
-                                plot.status === 'reserved' ? 'bg-yellow-100 text-yellow-800' :
-                                'bg-gray-100 text-gray-800'
-                              }`}>
-                                {plot.status}
-                              </span>
-                            </div>
-                          </button>
-                        ))}
-                      </div>
-                    )}
-                    
-                    {/* Facility Results */}
-                    {facilitySearchResults && facilitySearchResults.length > 0 && (
-                      <div>
-                        <p className="text-xs text-gray-500 px-2.5 py-1.5 font-medium">Facilities ({facilitySearchResults.length})</p>
-                        {facilitySearchResults.map((facility) => (
-                          <button
-                            key={`facility-${facility.id}`}
-                            onClick={() => onFacilityResultClick && onFacilityResultClick(facility)}
-                            className="w-full text-left px-2.5 py-2 hover:bg-gray-50 rounded-lg transition-colors"
-                          >
-                            <div className="flex items-center gap-2">
-                              <span className="text-lg">
-                                {facility.facility_type === 'office' && '🏢'}
-                                {facility.facility_type === 'chapel' && '⛪'}
-                                {facility.facility_type === 'restroom' && '🚻'}
-                                {facility.facility_type === 'parking' && '🅿️'}
-                                {facility.facility_type === 'gate' && '🚪'}
-                                {facility.facility_type === 'crematorium' && '🔥'}
-                                {facility.facility_type === 'columbarium' && '🏛️'}
-                                {facility.facility_type === 'garden' && '🌳'}
-                                {facility.facility_type === 'pond' && '💧'}
-                                {facility.facility_type === 'fountain' && '⛲'}
-                                {facility.facility_type === 'bench' && '🪑'}
-                                {facility.facility_type === 'memorial' && '🗿'}
-                                {!['office', 'chapel', 'restroom', 'parking', 'gate', 'crematorium', 'columbarium', 'garden', 'pond', 'fountain', 'bench', 'memorial'].includes(facility.facility_type) && '📍'}
-                              </span>
-                              <div className="flex-1">
-                                <p className="font-semibold text-gray-900 text-xs">{facility.name}</p>
-                                <p className="text-[10px] text-gray-600 capitalize">{facility.facility_type}</p>
-                              </div>
-                            </div>
-                          </button>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </>
-            )}
-
-            {showSearchResults && searchResults && searchResults.length === 0 && facilitySearchResults && facilitySearchResults.length === 0 && searchQuery && (
-              <>
-                <div 
-                  className="fixed inset-0 z-[999]" 
-                  onClick={onCloseSearch}
-                />
-                <div className="absolute z-[1001] w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-xl p-3">
-                  <p className="text-xs text-gray-500 text-center">No results found</p>
-                </div>
-              </>
-            )}
-          </div>
-        )}
-
         {/* Mapping Tools - Compact Panel */}
         <div className="bg-white rounded-lg shadow-md border border-gray-200">
           <div className="flex items-center gap-1 p-1.5 flex-wrap">
-            {/* Select Mode Button */}
+            {/* Select Template Button - Toggle Panel */}
             <button
-              onClick={() => onTemplateChange && onTemplateChange(null)}
-              className={`px-2.5 py-1.5 text-xs rounded-md border transition-all whitespace-nowrap ${
-                !selectedTemplate
-                  ? 'bg-indigo-600 text-white border-indigo-600 shadow-sm font-medium'
-                  : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
-              }`}
-              title="Select mode - Click plots to view/edit"
+              onClick={() => setShowMappingPanel(!showMappingPanel)}
+              className="px-2.5 py-1.5 text-xs bg-white text-gray-700 border border-gray-300 rounded-md hover:bg-gray-50 transition-colors font-medium flex items-center gap-1"
+              title="Select plot template"
             >
-              <span className="hidden sm:inline">Select</span>
-              <span className="sm:hidden">👆</span>
+              <span>{selectedTemplate ? selectedTemplate.width + 'm × ' + selectedTemplate.length + 'm' : 'Select Template'}</span>
+              <svg className={`w-3 h-3 transition-transform ${showMappingPanel ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+              </svg>
             </button>
-
-            {/* Template Buttons */}
-            {plotTemplates.slice(0, 3).map((template) => (
-              <button
-                key={template.id}
-                onClick={() => onTemplateChange && onTemplateChange(template.id)}
-                className={`px-2.5 py-1.5 text-xs rounded-md border transition-all whitespace-nowrap ${
-                  selectedTemplate && plotTemplates.find(t => t.id === template.id && t.width === selectedTemplate.width && t.length === selectedTemplate.length)
-                    ? 'bg-indigo-600 text-white border-indigo-600 shadow-sm font-medium'
-                    : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
-                }`}
-                title={template.name}
-              >
-                {template.name}
-              </button>
-            ))}
-
-            {/* More Templates Dropdown Toggle */}
-            {plotTemplates.length > 3 && (
-              <button
-                onClick={() => setShowMappingPanel(!showMappingPanel)}
-                className="px-2 py-1.5 text-xs bg-white text-gray-700 border border-gray-300 rounded-md hover:bg-gray-50 transition-colors"
-                title="More options"
-              >
-                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z" />
-                </svg>
-              </button>
-            )}
 
             {/* Rotation Controls - Inline when template selected */}
             {selectedTemplate && (
@@ -774,22 +631,24 @@ export default function PlotMap({
         </div>
       </div>
 
-      {/* Extended Template Panel - Only shown when more options clicked */}
-      {showMappingPanel && plotTemplates.length > 3 && (
-        <div className="absolute top-14 right-2 z-[1000] bg-white rounded-lg shadow-lg border border-gray-200 w-64">
-          <div className="p-2">
-            <div className="flex items-center justify-between mb-2 pb-2 border-b border-gray-200">
-              <h3 className="text-xs font-semibold text-gray-800">All Templates</h3>
+      {/* Template Selection Panel - Expandable */}
+      {showMappingPanel && (
+        <div className="absolute top-14 left-2 z-[1000] bg-white rounded-lg shadow-lg border border-gray-200 w-80">
+          <div className="p-3">
+            <div className="flex items-center justify-between mb-3 pb-2 border-b border-gray-200">
+              <h3 className="text-sm font-semibold text-gray-800">Select Plot Template</h3>
               <button
                 onClick={() => setShowMappingPanel(false)}
-                className="p-0.5 hover:bg-gray-100 rounded transition-colors"
+                className="p-1 hover:bg-gray-100 rounded transition-colors"
               >
-                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                 </svg>
               </button>
             </div>
-            <div className="grid grid-cols-2 gap-1.5">
+            
+            {/* Preset Templates */}
+            <div className="grid grid-cols-2 gap-2">
               {plotTemplates.map((template) => (
                 <button
                   key={template.id}
@@ -797,13 +656,14 @@ export default function PlotMap({
                     onTemplateChange && onTemplateChange(template.id);
                     setShowMappingPanel(false);
                   }}
-                  className={`px-2.5 py-2 text-xs rounded-md border transition-colors ${
+                  className={`px-3 py-2.5 text-sm rounded-lg border-2 transition-all ${
                     selectedTemplate && plotTemplates.find(t => t.id === template.id && t.width === selectedTemplate.width && t.length === selectedTemplate.length)
-                      ? 'bg-indigo-600 text-white border-indigo-600'
+                      ? 'bg-indigo-50 text-indigo-700 border-indigo-500 font-semibold'
                       : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
                   }`}
                 >
                   <div className="font-semibold">{template.name}</div>
+                  <div className="text-xs text-gray-500 mt-0.5">{template.width}m × {template.length}m</div>
                 </button>
               ))}
             </div>
@@ -812,18 +672,30 @@ export default function PlotMap({
       )}
 
       <MapContainer
+        key={`plotmap-${cemetery.id}-${mapLayer}`}
         center={center}
         zoom={20}
         maxZoom={22}
         minZoom={15}
         style={{ height: '100%', width: '100%' }}
         scrollWheelZoom={true}
-        zoomControl={true}
-        ref={setMap}
+          zoomControl={false}
+          ref={(m: L.Map | null) => {
+            if (m) {
+              setMap(m);
+              mapRef.current = m;
+            } else {
+              setMap(null);
+              mapRef.current = null;
+            }
+          }}
         preferCanvas={true}
         attributionControl={true}
         doubleClickZoom={true}
       >
+        {/* Zoom Control - Bottom Left */}
+        {map && <ZoomControl position="topleft" />}
+        
         {mapLayer === 'street' && (
           <TileLayer
             key="street-layer"
@@ -860,7 +732,7 @@ export default function PlotMap({
         {/* Drawing Control - Only for new plots */}
         <FeatureGroup>
           <EditControl
-            position="topright"
+            position="topleft"
             onCreated={handleCreated}
             draw={{
               polygon: selectedTemplate ? false : {
