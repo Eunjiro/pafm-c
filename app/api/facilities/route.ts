@@ -5,6 +5,7 @@ export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
     const cemeteryId = searchParams.get('cemetery_id');
+    const q = searchParams.get('q')?.toLowerCase() || '';
 
     if (!cemeteryId) {
       return NextResponse.json(
@@ -13,10 +14,17 @@ export async function GET(request: Request) {
       );
     }
 
-    const result = await pool.query(
-      'SELECT * FROM facilities WHERE cemetery_id = $1 ORDER BY facility_type, name',
-      [cemeteryId]
-    );
+    let sql = 'SELECT * FROM facilities WHERE cemetery_id = $1';
+    let params = [cemeteryId];
+
+    if (q) {
+      sql += ' AND (LOWER(name) LIKE $2 OR LOWER(facility_type) LIKE $2 OR LOWER(description) LIKE $2)';
+      params.push(`%${q}%`);
+    }
+
+    sql += ' ORDER BY facility_type, name';
+
+    const result = await pool.query(sql, params);
 
     return NextResponse.json({ facilities: result.rows });
   } catch (error) {
