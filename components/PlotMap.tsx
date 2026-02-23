@@ -842,8 +842,8 @@ export default function PlotMap({
             const isHighlighted = shouldHighlightPlot(plot);
             const isSelected = selectedPlot && plot.id === selectedPlot.id;
             const pathOptions = {
-              color: isSelected ? '#3b82f6' : (isHighlighted ? (plotFilter === 'available' ? '#10b981' : '#ef4444') : getPlotColor(plot.status)),
-              fillColor: isSelected ? '#3b82f6' : (isHighlighted ? (plotFilter === 'available' ? '#10b981' : '#ef4444') : getPlotColor(plot.status)),
+              color: isSelected ? '#3b82f6' : (isHighlighted ? '#ff9800' : getPlotColor(plot.status)),
+              fillColor: isSelected ? '#3b82f6' : (isHighlighted ? '#ff9800' : getPlotColor(plot.status)),
               fillOpacity: isSelected ? 0.8 : (isHighlighted ? 0.7 : 0.5),
               weight: isSelected ? 5 : (isHighlighted ? 4 : 2),
               plotId: plot.id,

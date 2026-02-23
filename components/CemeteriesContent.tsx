@@ -17,8 +17,7 @@ interface Cemetery {
 export default function CemeteriesContent() {
   const [cemeteries, setCemeteries] = useState<Cemetery[]>([]);
   const [loading, setLoading] = useState(true);
-  const [deleteId, setDeleteId] = useState<number | null>(null);
-  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  // Delete actions removed for cemeteries-manage
 
   useEffect(() => {
     fetchCemeteries();
@@ -36,25 +35,7 @@ export default function CemeteriesContent() {
     }
   }
 
-  async function handleDelete(id: number) {
-    try {
-      const response = await fetch(`/api/cemeteries/${id}`, {
-        method: 'DELETE',
-      });
-
-      if (response.ok) {
-        setCemeteries(cemeteries.filter(c => c.id !== id));
-        setShowDeleteModal(false);
-        setDeleteId(null);
-      } else {
-        const data = await response.json();
-        alert(data.error || 'Failed to delete cemetery');
-      }
-    } catch (error) {
-      console.error('Error deleting cemetery:', error);
-      alert('Failed to delete cemetery');
-    }
-  }
+  // Delete logic removed for cemeteries-manage
 
   if (loading) {
     return (
@@ -181,15 +162,6 @@ export default function CemeteriesContent() {
                     >
                       Edit
                     </Link>
-                    <button 
-                      onClick={() => {
-                        setDeleteId(cemetery.id);
-                        setShowDeleteModal(true);
-                      }}
-                      className="text-red-600 hover:text-red-900 font-medium"
-                    >
-                      Delete
-                    </button>
                   </td>
                 </tr>
               ))}
@@ -198,41 +170,7 @@ export default function CemeteriesContent() {
         </div>
       )}
 
-      {/* Delete Confirmation Modal */}
-      {showDeleteModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-xl p-6 max-w-md w-full mx-4 shadow-2xl border-2 border-gray-200">
-            <div className="flex items-center gap-3 mb-4">
-              <div className="bg-red-100 p-3 rounded-full">
-                <svg className="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                </svg>
-              </div>
-              <h3 className="text-xl font-bold text-gray-900">Delete Cemetery</h3>
-            </div>
-            <p className="text-gray-600 mb-6">
-              Are you sure you want to delete this cemetery? This action cannot be undone and will also delete all associated plots and burials.
-            </p>
-            <div className="flex justify-end gap-3">
-              <button
-                onClick={() => {
-                  setShowDeleteModal(false);
-                  setDeleteId(null);
-                }}
-                className="px-5 py-2.5 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors font-medium"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={() => deleteId && handleDelete(deleteId)}
-                className="px-5 py-2.5 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors font-semibold shadow-md"
-              >
-                Delete Cemetery
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* Delete Confirmation Modal removed for cemeteries-manage */}
     </div>
   );
 }
